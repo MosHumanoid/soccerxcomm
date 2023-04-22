@@ -4,7 +4,7 @@ from .message import Message
 
 
 class HttpServer:
-    """The server to communicate with clients."""
+    """The network server to communicate with clients."""
 
     def __init__(self, listen_port: int):
         """Initialize the server.

@@ -10,8 +10,8 @@ class Message:
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "properties": {
-            "id": {
-                "type": "integer",
+            "type": {
+                "type": "string",
                 "enum": [
                     "get_game_info",
                     "get_sensor_data",
@@ -21,7 +21,7 @@ class Message:
                 ]
             },
             "bound_to": {
-                "type": "integer",
+                "type": "string",
                 "enum": [
                     "client",
                     "server"
@@ -29,7 +29,7 @@ class Message:
             }
         },
         "required": [
-            "id",
+            "type",
             "bound_to"
         ]
     }

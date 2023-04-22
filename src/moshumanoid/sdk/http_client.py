@@ -4,7 +4,7 @@ from .message import Message
 
 
 class HttpClient:
-    """The client to communicate with servers."""
+    """The network client to communicate with the server."""
 
     def __init__(self, server_addr: str):
         """Initialize the client.
