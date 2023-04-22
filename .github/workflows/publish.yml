@@ -1,0 +1,30 @@
+name: Publish
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Setup Poetry
+        uses: abatilo/actions-poetry@v2
+
+      - name: Setup PyPI credentials
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.PYPI_API_KEY }}
+      
+      - name: Build and publish the package
+        run: |
+          poetry publish --build

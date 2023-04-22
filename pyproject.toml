@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "moshumanoid.sdk"
+version = "0.0.1"
+description = ""
+authors = ["Zijian Zhang <futrime@outlook.com>"]
+readme = "README.md"
+packages = [
+    {include = "moshumanoid", from="src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
