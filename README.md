@@ -1,6 +1,6 @@
 # MosHumanoid SDK
 
-MosHumanoid SDK is a Python library for communication with MosHumanoid robots and servers.
+MosHumanoid SDK is a Python library for communication with MosHumanoid clients and servers.
 
 ## Installation
 
