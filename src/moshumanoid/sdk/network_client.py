@@ -18,7 +18,7 @@ class INetworkClient(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def send(self, msg: Message) -> None:
+    async def send(self, msg: Message) -> None:
         """Sends a message to the server.
 
         Args:

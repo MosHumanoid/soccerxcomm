@@ -62,11 +62,11 @@ class Message:
 
         self._json[key] = value
 
-    def get_json(self) -> Dict[str, Any]:
-        """Gets the JSON object.
+    def to_dict(self) -> Dict[str, Any]:
+        """Converts the message to a dictionary.
 
         Returns:
-            The JSON object.
+            The dictionary of the message.
         """
 
         return self._json

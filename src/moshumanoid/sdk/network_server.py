@@ -8,7 +8,7 @@ class INetworkServer(ABC):
     """The interface of the network server to communicate with clients."""
 
     @abstractmethod
-    def broadcast(self, msg: Message) -> None:
+    async def broadcast(self, msg: Message) -> None:
         """Broadcasts a message to all clients.
 
         Args:
@@ -18,7 +18,7 @@ class INetworkServer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def register_callback(self, callback: Callable[[str, Message], None]) -> None:
+    async def register_callback(self, callback: Callable[[str, Message], None]) -> None:
         """Registers a callback function to be called when a message is received.
 
         Args:
@@ -28,7 +28,7 @@ class INetworkServer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def send(self, msg: Message, token: str) -> None:
+    async def send(self, msg: Message, token: str) -> None:
         """Sends a message to a client.
 
         Args:
