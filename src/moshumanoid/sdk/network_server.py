@@ -18,11 +18,11 @@ class INetworkServer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def receive(self) -> Message:
-        """Receives a message from all clients.
+    def register_callback(self, callback: Callable[[str, Message], None]) -> None:
+        """Registers a callback function to be called when a message is received.
 
-        Returns:
-            The received message.
+        Args:
+            callback: The callback function to register. The arguments are the token of the client and the message.
         """
 
         raise NotImplementedError

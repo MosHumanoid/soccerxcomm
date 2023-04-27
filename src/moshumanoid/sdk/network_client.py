@@ -8,11 +8,11 @@ class INetworkClient(ABC):
     """The interface of the network client to communicate with the server."""
 
     @abstractmethod
-    def receive(self) -> Message:
-        """Receives a message from the server.
+    def register_callback(self, callback: Callable[[Message], None]) -> None:
+        """Registers a callback function to be called when a message is received.
 
-        Returns:
-            The received message.
+        Args:
+            callback: The callback function to register.
         """
 
         raise NotImplementedError

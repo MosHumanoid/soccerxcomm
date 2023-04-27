@@ -11,14 +11,7 @@ class Message:
         "type": "object",
         "properties": {
             "type": {
-                "type": "string",
-                "enum": [
-                    "get_game_info",
-                    "get_sensor_data",
-                    "get_team_info",
-                    "start_streaming",
-                    "stop_streaming"
-                ]
+                "type": "string"
             },
             "bound_to": {
                 "type": "string",
