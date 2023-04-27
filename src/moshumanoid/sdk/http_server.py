@@ -1,9 +1,8 @@
 import asyncio
 import re
-import threading
-from typing import Callable, Dict, List
+from typing import Any, Callable, Coroutine, Dict, List
 
-from flask import Flask, Response, jsonify, request
+from aiohttp import web
 
 from moshumanoid.sdk.message import Message
 
@@ -25,26 +24,24 @@ class HttpServer(INetworkServer):
         """
         self._port: int = port
 
-        self._callback_list: List[Callable[[str, Message], None]] = []
+        self._callback_list: List[Callable[[str, Message], Coroutine[Any, Any, None]]] = []
         self._message_queue_dict: Dict[str, asyncio.Queue] = {
             token: asyncio.Queue() for token in token_list
         }
 
-        # Initialize the Flask app.
-        self._app = Flask(str(id(self)))
-
-        self._app.add_url_rule("/", "get", self._on_get, methods=["GET"])
-        self._app.add_url_rule("/", "post", self._on_post, methods=["POST"])
-
-        # Start the server.
-        self._thread = threading.Thread(target=self._run)
-        self._thread.start()
+        # Initialize the HTTP server.
+        self._app = web.Application()
+        self._app.add_routes([
+            web.get('/', self._on_get),
+            web.post('/', self._on_post)
+        ])
+        self._runner = web.AppRunner(self._app)
 
     async def broadcast(self, msg: Message) -> None:
         for token in self._message_queue_dict.keys():
             await self._message_queue_dict[token].put(msg)
 
-    async def register_callback(self, callback: Callable[[str, Message], None]) -> None:
+    async def register_callback(self, callback: Callable[[str, Message], Coroutine[Any, Any, None]]) -> None:
         self._callback_list.append(callback)
 
     async def send(self, msg: Message, token: str) -> None:
@@ -53,56 +50,63 @@ class HttpServer(INetworkServer):
 
         await self._message_queue_dict[token].put(msg)
 
-    def _on_get(self) -> Response:
-        token = None
+    async def start(self) -> None:
+        await self._runner.setup()
+        site = web.TCPSite(self._runner, port=self._port)
+        await site.start()
 
-        auth_header = str(request.headers.get('Authorization', type=str))
-        if auth_header:
-            match_result = re.search(r'Bearer (.*)', auth_header)
-            if match_result:
-                token = match_result.group(1)
+    async def stop(self) -> None:
+        await self._runner.cleanup()
 
-        if token is None:
-            return Response(status=401)
-        
-        if token not in self._message_queue_dict:
-            return Response(status=403)
-
+    async def _on_get(self, request: web.Request) -> web.Response:
         try:
-            msg = self._message_queue_dict[token].get_nowait()
-            return jsonify(msg.to_dict())
-        
-        except asyncio.QueueEmpty:
-            return Response(status=404)
+            auth_header = request.headers.get('Authorization')
+            if auth_header is None:
+                return web.Response(status=401)
 
-    def _on_post(self) -> Response:
-        token = None
+            match_result = re.search(r'Bearer (\w*)', auth_header)
+            if match_result is None:
+                return web.Response(status=401)
 
-        auth_header = str(request.headers.get('Authorization', type=str))
-        if auth_header:
-            match_result = re.search(r'Bearer (.*)', auth_header)
-            if match_result:
-                token = match_result.group(1)
+            token = match_result.group(1)
 
-        if token is None:
-            return Response(status=401)
-        
-        if token not in self._message_queue_dict:
-            return Response(status=403)
-        
-        if not request.is_json:
-            return Response(status=400)
-        
-        try:
-            req_msg = Message(request.get_json())
-            for callback in self._callback_list:
-                callback(token, req_msg)
+            if token not in self._message_queue_dict:
+                return web.Response(status=403)
 
-            return Response(status=200)
+            if self._message_queue_dict[token].empty():
+                return web.Response(status=204)
+
+            msg = await self._message_queue_dict[token].get()
+            return web.json_response(msg.to_dict())
         
         except Exception as e:
-            self._logger.error(str(e))
-            return Response(status=500)
+            self._logger.error(
+                f"Failed to handle GET from {request.remote}: {e}")
+            return web.Response(status=400)
 
-    def _run(self) -> None:
-        self._app.run(port=self._port)
+    async def _on_post(self, request: web.Request) -> web.Response:
+        try:
+            auth_header = request.headers.get('Authorization')
+            if auth_header is None:
+                return web.Response(status=401)
+
+            match_result = re.search(r'Bearer (\w*)', auth_header)
+            if match_result is None:
+                return web.Response(status=401)
+
+            token = match_result.group(1)
+            if token not in self._message_queue_dict:
+                return web.Response(status=403)
+
+            msg = Message(await request.json())
+            for callback in self._callback_list:
+                await callback(token, msg)
+
+            return web.Response(status=204)
+
+        except Exception as e:
+            self._logger.error(
+                f"Failed to handle POST from {request.remote}: {e}")
+            return web.Response(status=400)
+
+

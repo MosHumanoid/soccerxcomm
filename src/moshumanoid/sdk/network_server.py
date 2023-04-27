@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Any, Callable, Coroutine
 
 from .message import Message
 
@@ -18,7 +18,7 @@ class INetworkServer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def register_callback(self, callback: Callable[[str, Message], None]) -> None:
+    async def register_callback(self, callback: Callable[[str, Message], Coroutine[Any, Any, None]]) -> None:
         """Registers a callback function to be called when a message is received.
 
         Args:
@@ -38,3 +38,14 @@ class INetworkServer(ABC):
 
         raise NotImplementedError
 
+    @abstractmethod
+    async def start(self) -> None:
+        """Starts the server."""
+
+        raise NotImplementedError
+
+    @abstractmethod
+    async def stop(self) -> None:
+        """Stops the server."""
+
+        raise NotImplementedError

@@ -1,8 +1,14 @@
+import asyncio
+
+from .http_client import HttpClient
 from .message import Message
+from .logger import Logger
 
 
 class Client:
     """The client to send commands to the server."""
+
+    _logger = Logger("Client")
 
     def __init__(self, server_addr: str, token: str):
         """Initializes the client.
@@ -12,27 +18,33 @@ class Client:
             token: The token of the game.
         """
 
-        # self._network_client = HttpClient(server_addr)
+        self._network_client = HttpClient(server_addr, token)
         self._token = token
 
-    def start_streaming(self) -> None:
-        """Starts image streaming."""
+        self._task_list = [
+            asyncio.create_task(self._get_info_loop())
+        ]
 
-        message = Message({
-            'type': 'start_streaming',
-            'bound_to': 'server',
-            'token': self._token
-        })
+    async def _get_info_loop(self):
+        await self._network_client.connect()
 
-        # self._network_client.send(message)
+        while True:
+            try:
+                await asyncio.sleep(1)
 
-    def stop_streaming(self) -> None:
-        """Stops image streaming."""
+                await self._network_client.send(Message(
+                    {
+                        "type": "get_game_info",
+                        "bound_to": "server"
+                    }
+                ))
 
-        message = Message({
-            'type': 'stop_streaming',
-            'bound_to': 'server',
-            'token': self._token
-        })
+                await self._network_client.send(Message(
+                    {
+                        "type": "get_team_info",
+                        "bound_to": "server"
+                    }
+                ))
 
-        # self._network_client.send(message)
+            except Exception as e:
+                self._logger.error(f'Failed to get info: {e}')

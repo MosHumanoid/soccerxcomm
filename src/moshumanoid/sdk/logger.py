@@ -1,6 +1,5 @@
 import sys
 import threading
-from abc import ABC, abstractmethod
 from datetime import datetime
 
 from termcolor import cprint
