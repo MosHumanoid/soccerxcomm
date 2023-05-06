@@ -13,14 +13,15 @@ class HttpClient(INetworkClient):
 
     _logger = Logger("HttpClient")
 
-    def __init__(self, url: str, token: str):
+    def __init__(self, host: str, port: int, token: str):
         """Initializes a new instance of the HttpClient class.
 
         Args:
-            url: The URL of the server.
+            host: The server address.
+            port: The server port.
             token: The token of the client.
         """
-        self._url: str = url
+        self._url: str = f"http://{host}:{port}/"
         self._token: str = token
 
         self._callback_list: List[Callable[[Message],
