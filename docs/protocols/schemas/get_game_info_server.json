@@ -1,0 +1,61 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "type": {
+            "type": "string",
+            "const": "get_game_info"
+        },
+        "bound_to": {
+            "type": "string",
+            "const": "client"
+        },
+        "stage": {
+            "type": "string",
+            "enum": [
+                "ready",
+                "in_progress",
+                "paused",
+                "finished",
+                "aborted"
+            ]
+        },
+        "start_time": {
+            "type": "integer",
+            "description": "Unix timestamp in milliseconds"
+        },
+        "end_time": {
+            "type": "integer",
+            "description": "Unix timestamp in milliseconds"
+        },
+        "score": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "team": {
+                        "type": "string"
+                    },
+                    "score": {
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "team",
+                    "score"
+                ]
+            }
+        },
+        "simulation_rate": {
+            "type": "number"
+        }
+    },
+    "required": [
+        "type",
+        "bound_to",
+        "stage",
+        "start_time",
+        "end_time",
+        "score"
+    ]
+}

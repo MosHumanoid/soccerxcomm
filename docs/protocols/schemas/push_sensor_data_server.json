@@ -1,0 +1,60 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "type": {
+            "type": "string",
+            "const": "push_sensor_data"
+        },
+        "bound_to": {
+            "type": "string",
+            "const": "client"
+        },
+        "imu": {
+            "type": "object",
+            "properties": {
+                "accelerometer": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "gyroscope": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            },
+            "required": [
+                "accelerometer",
+                "gyroscope"
+            ]
+        },
+        "motor": {
+            "type": "object",
+            "properties": {
+                "head": {
+                    "type": "number"
+                },
+                "neck": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "head",
+                "neck"
+            ]
+        }
+    },
+    "required": [
+        "type",
+        "bound_to",
+        "imu",
+        "motor"
+    ]
+}
