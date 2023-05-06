@@ -11,7 +11,7 @@ import src.moshumanoid.sdk as sdk
 ID = 1145141919810
 
 async def main():
-    client = sdk.HttpClient("http://localhost:14514", "")
+    client = sdk.HttpClient("localhost", 14514, "")
     await client.register_callback(callback)
     await client.connect()
 
@@ -28,7 +28,7 @@ async def main():
             }
         )
 
-        await client.send(msg, "")
+        await client.send(msg)
 
     await client.disconnect()
 
