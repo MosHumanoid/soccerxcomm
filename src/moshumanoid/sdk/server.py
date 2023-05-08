@@ -41,12 +41,18 @@ class Server:
         self._all_client_info: Dict[str, Server.ClientInfo] = all_client_info
 
         self._network_server.register_callback(self._callback).__await__()
+        self._network_server.start().__await__()
 
         # Game information
         self._stage: GameStageKind | None = None
         self._start_time: datetime.datetime | None = None
         self._end_time: datetime.datetime | None = None
         self._score: Dict[str, float] = {} # team -> score
+
+    def __del__(self):
+        """Destructs the server."""
+
+        self._network_server.stop().__await__()
 
     async def get_stage(self) -> GameStageKind | None:
         """Gets the current stage of the game.

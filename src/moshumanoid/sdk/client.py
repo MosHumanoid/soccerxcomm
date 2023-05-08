@@ -42,6 +42,14 @@ class Client:
         # Team information
         self._team: str | None = None
 
+    def __del__(self):
+        """Destructs the client."""
+
+        for task in self._task_list:
+            task.cancel()
+
+        self._network_client.disconnect().__await__()
+
     async def get_token(self) -> str:
         """Gets the token of the game.
 
