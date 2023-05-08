@@ -2,7 +2,7 @@ import asyncio
 
 import moshumanoid.sdk as sdk
 
-server = sdk.HttpServer(14514, [""])
+server = sdk.HttpServer(14514, ["example_client"])
 
 async def main():
     await server.register_callback(callback)

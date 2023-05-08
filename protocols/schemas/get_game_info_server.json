@@ -21,11 +21,11 @@
             ]
         },
         "start_time": {
-            "type": "integer",
+            "type": "number",
             "description": "Unix timestamp in milliseconds"
         },
         "end_time": {
-            "type": "integer",
+            "type": "number",
             "description": "Unix timestamp in milliseconds"
         },
         "score": {
