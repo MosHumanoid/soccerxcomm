@@ -1,11 +1,6 @@
 import asyncio
-import pathlib
-import sys
 
-sys.path.append(
-    str(pathlib.Path(__file__).parent.parent.parent.resolve()))
-
-import src.moshumanoid.sdk as sdk
+import moshumanoid.sdk as sdk
 
 server = sdk.HttpServer(14514, [""])
 

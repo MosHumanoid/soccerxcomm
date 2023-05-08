@@ -1,12 +1,7 @@
 import asyncio
 import datetime
-import pathlib
-import sys
 
-sys.path.append(
-    str(pathlib.Path(__file__).parent.parent.parent.resolve()))
-
-import src.moshumanoid.sdk as sdk
+import moshumanoid.sdk as sdk
 
 ID = 1145141919810
 
