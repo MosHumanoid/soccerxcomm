@@ -24,30 +24,34 @@ class Logger:
     def debug(self, message: str) -> None:
         if not self._debug:
             return
-        
+
         with Logger._lock:
-            cprint(f'{Logger._get_current_time_string()} ', color='cyan', end='')
+            cprint(f'{Logger._get_current_time_string()} ',
+                   color='cyan', end='')
             cprint(f'DEBUG ', color='dark_grey', end='')
             cprint(f'[{self._namespace}] {message}', color='dark_grey', end='')
             print()
 
     def info(self, message: str) -> None:
         with Logger._lock:
-            cprint(f'{Logger._get_current_time_string()} ', color='cyan', end='')
+            cprint(f'{Logger._get_current_time_string()} ',
+                   color='cyan', end='')
             cprint(f'INFO  ', color='blue', end='')
             cprint(f'[{self._namespace}] {message}', color='white', end='')
             print()
 
     def warn(self, message: str) -> None:
         with Logger._lock:
-            cprint(f'{Logger._get_current_time_string()} ', color='cyan', end='')
+            cprint(f'{Logger._get_current_time_string()} ',
+                   color='cyan', end='')
             cprint(f'WARN  ', color='yellow', end='')
             cprint(f'[{self._namespace}] {message}', color='yellow', end='')
             print()
 
     def error(self, message: str) -> None:
         with Logger._lock:
-            cprint(f'{Logger._get_current_time_string()} ', color='cyan', end='')
+            cprint(f'{Logger._get_current_time_string()} ',
+                   color='cyan', end='')
             cprint(f'ERROR ', color='red', end='')
             cprint(f'[{self._namespace}] {message}', color='red', end='')
             print()

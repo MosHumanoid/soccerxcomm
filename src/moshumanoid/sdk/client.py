@@ -58,7 +58,7 @@ class Client:
         self._task_list.clear()
 
         await self._network_client.disconnect()
-    
+
     async def get_stage(self) -> GameStageKind | None:
         """Gets the current stage of the game.
 
@@ -67,7 +67,7 @@ class Client:
         """
 
         return self._stage
-    
+
     async def get_start_time(self) -> datetime.datetime | None:
         """Gets the start time of the game.
 
@@ -76,7 +76,7 @@ class Client:
         """
 
         return self._start_time
-    
+
     async def get_end_time(self) -> datetime.datetime | None:
         """Gets the end time of the game.
 
@@ -85,7 +85,7 @@ class Client:
         """
 
         return self._end_time
-    
+
     async def get_score(self, team: str) -> float | None:
         """Gets the score of the team.
 
@@ -104,10 +104,13 @@ class Client:
 
             if message_type == 'get_game_info':
                 self._stage = GameStageKind(str(msg['stage']))
-                self._start_time = datetime.datetime.fromtimestamp(int(msg['start_time']))
-                self._end_time = datetime.datetime.fromtimestamp(int(msg['end_time']))
+                self._start_time = datetime.datetime.fromtimestamp(
+                    int(msg['start_time']))
+                self._end_time = datetime.datetime.fromtimestamp(
+                    int(msg['end_time']))
                 for score_item in msg['score']:
-                    self._score[str(score_item['team'])] = float(score_item['score'])
+                    self._score[str(score_item['team'])] = float(
+                        score_item['score'])
 
             elif message_type == 'get_team_info':
                 self._team = str(msg['team'])

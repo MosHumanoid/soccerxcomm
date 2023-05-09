@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Dict, List
+from typing import Dict
 
 from .game_stage_kind import GameStageKind
 from .http_server import HttpServer
@@ -37,7 +37,8 @@ class Server:
             all_client_info: The information of the clients.
         """
 
-        self._network_server: INetworkServer = HttpServer(port, list(all_client_info.keys()))
+        self._network_server: INetworkServer = HttpServer(
+            port, list(all_client_info.keys()))
         self._all_client_info: Dict[str, Server.ClientInfo] = all_client_info
 
         self._network_server.register_callback(self._callback).__await__()
@@ -47,7 +48,7 @@ class Server:
         self._stage: GameStageKind | None = None
         self._start_time: datetime.datetime | None = None
         self._end_time: datetime.datetime | None = None
-        self._score: Dict[str, float] = {} # team -> score
+        self._score: Dict[str, float] = {}  # team -> score
 
     def __del__(self):
         """Destructs the server."""
@@ -71,7 +72,7 @@ class Server:
         """
 
         self._stage = stage
-    
+
     async def get_start_time(self) -> datetime.datetime | None:
         """Gets the start time of the game.
 
@@ -80,7 +81,7 @@ class Server:
         """
 
         return self._start_time
-    
+
     async def set_start_time(self, start_time: datetime.datetime) -> None:
         """Sets the start time of the game.
 
@@ -98,7 +99,7 @@ class Server:
         """
 
         return self._end_time
-    
+
     async def set_end_time(self, end_time: datetime.datetime) -> None:
         """Sets the end time of the game.
 
@@ -119,7 +120,7 @@ class Server:
         """
 
         return self._score.get(team, None)
-    
+
     async def set_score(self, team: str, score: float) -> None:
         """Sets the score of the team.
 
@@ -136,11 +137,11 @@ class Server:
 
             if message_type == 'get_game_info':
                 if self._stage is None or self._start_time is None or \
-                    self._end_time is None or self._score is None:
+                        self._end_time is None or self._score is None:
                     raise Exception("The game information is not ready.")
-                
+
                 if self._all_client_info.get(client_token, None) is None or \
-                    self._score.get(self._all_client_info[client_token].team, None) is None:
+                        self._score.get(self._all_client_info[client_token].team, None) is None:
                     raise Exception("The client is not in the game.")
 
                 await self._network_server.send(Message({
@@ -155,7 +156,7 @@ class Server:
             elif message_type == 'get_team_info':
                 if self._all_client_info.get(client_token, None) is None:
                     raise Exception("The client is not in the game.")
-                
+
                 await self._network_server.send(Message({
                     'type': 'get_team_info',
                     'bound_to': 'client',

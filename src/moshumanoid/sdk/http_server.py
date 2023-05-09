@@ -24,7 +24,8 @@ class HttpServer(INetworkServer):
         """
         self._port: int = port
 
-        self._callback_list: List[Callable[[str, Message], Coroutine[Any, Any, None]]] = []
+        self._callback_list: List[Callable[[
+            str, Message], Coroutine[Any, Any, None]]] = []
         self._message_queue_dict: Dict[str, asyncio.Queue] = {
             token: asyncio.Queue() for token in token_list
         }
@@ -78,7 +79,7 @@ class HttpServer(INetworkServer):
 
             msg = await self._message_queue_dict[token].get()
             return web.json_response(msg.to_dict())
-        
+
         except Exception as e:
             self._logger.error(
                 f"Failed to handle GET from {request.remote}: {e}")
@@ -108,5 +109,3 @@ class HttpServer(INetworkServer):
             self._logger.error(
                 f"Failed to handle POST from {request.remote}: {e}")
             return web.Response(status=400)
-
-
