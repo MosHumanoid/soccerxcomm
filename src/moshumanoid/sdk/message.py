@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict
 
 import jsonschema
@@ -61,6 +62,15 @@ class Message:
         """
 
         self._json[key] = value
+
+    def __str__(self) -> str:
+        """Converts the message to a string.
+
+        Returns:
+            The string of the message.
+        """
+
+        return json.dumps(self._json)
 
     def to_dict(self) -> Dict[str, Any]:
         """Converts the message to a dictionary.

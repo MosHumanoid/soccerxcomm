@@ -7,7 +7,7 @@ async def main():
 
     await client.connect()
 
-    await asyncio.sleep(1)
+    await asyncio.sleep(5)
 
     stage = await client.get_stage()
     start_time = await client.get_start_time()

@@ -37,23 +37,32 @@ class Server:
             all_client_info: The information of the clients.
         """
 
+        self._is_callback_registered: bool = False
         self._network_server: INetworkServer = HttpServer(
             port, list(all_client_info.keys()))
-        self._all_client_info: Dict[str, Server.ClientInfo] = all_client_info
-
-        self._network_server.register_callback(self._callback).__await__()
-        self._network_server.start().__await__()
-
+        
         # Game information
         self._stage: GameStageKind | None = None
         self._start_time: datetime.datetime | None = None
         self._end_time: datetime.datetime | None = None
         self._score: Dict[str, float] = {}  # team -> score
 
-    def __del__(self):
-        """Destructs the server."""
+        # Client information
+        self._all_client_info: Dict[str, Server.ClientInfo] = all_client_info
 
-        self._network_server.stop().__await__()
+    async def start(self) -> None:
+        """Starts the game."""
+
+        if not self._is_callback_registered:
+            await self._network_server.register_callback(self._callback)
+            self._is_callback_registered = True
+
+        await self._network_server.start()
+
+    async def stop(self) -> None:
+        """Stops the game."""
+
+        await self._network_server.stop()
 
     async def get_stage(self) -> GameStageKind | None:
         """Gets the current stage of the game.
@@ -150,7 +159,10 @@ class Server:
                     'stage': self._stage.value,
                     'start_time': self._start_time.timestamp(),
                     'end_time': self._end_time.timestamp(),
-                    'score': self._score[self._all_client_info[client_token].team]
+                    'score': [{
+                        "team": team,
+                        "score": score
+                    } for team, score in self._score.items()]
                 }), client_token)
 
             elif message_type == 'get_team_info':

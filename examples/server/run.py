@@ -9,12 +9,16 @@ server = sdk.Server(14514, {
 })
 
 async def main():
+    await server.start()
+
     await server.set_stage(sdk.GameStageKind.READY)
     await server.set_start_time(datetime.datetime.now())
     await server.set_end_time(datetime.datetime.now() + datetime.timedelta(minutes=1))
     await server.set_score("example_team", 114.514)
 
     await asyncio.sleep(60)
+
+    await server.stop()
 
 if __name__ == '__main__':
     asyncio.run(main())

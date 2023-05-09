@@ -78,6 +78,7 @@ class HttpServer(INetworkServer):
                 return web.Response(status=204)
 
             msg = await self._message_queue_dict[token].get()
+            self._logger.debug(f"Sending message: {msg}")
             return web.json_response(msg.to_dict())
 
         except Exception as e:
@@ -100,6 +101,7 @@ class HttpServer(INetworkServer):
                 return web.Response(status=403)
 
             msg = Message(await request.json())
+            self._logger.debug(f"Received message: {msg}")
             for callback in self._callback_list:
                 await callback(token, msg)
 
