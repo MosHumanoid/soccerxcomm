@@ -25,13 +25,9 @@ class Client:
             token: The token of the game.
         """
 
+        self._is_callback_registered: bool = False
         self._network_client: INetworkClient = HttpClient(host, port, token)
-        self._token: str = token
-
-        self._network_client.register_callback(self._callback).__await__()
-        self._task_list: List[asyncio.Task] = [
-            asyncio.create_task(self._loop())
-        ]
+        self._task_list: List[asyncio.Task] = []
 
         # Game information
         self._stage: GameStageKind | None = None
@@ -42,22 +38,26 @@ class Client:
         # Team information
         self._team: str | None = None
 
-    def __del__(self):
-        """Destructs the client."""
+    async def connect(self) -> None:
+        """Connects to the server."""
+
+        if not self._is_callback_registered:
+            await self._network_client.register_callback(self._callback)
+            self._is_callback_registered = True
+
+        await self._network_client.connect()
+
+        self._task_list.append(asyncio.create_task(self._loop()))
+
+    async def disconnect(self) -> None:
+        """Disconnects from the server."""
 
         for task in self._task_list:
             task.cancel()
 
-        self._network_client.disconnect().__await__()
+        self._task_list.clear()
 
-    async def get_token(self) -> str:
-        """Gets the token of the game.
-
-        Returns:
-            The token of the game.
-        """
-
-        return self._token
+        await self._network_client.disconnect()
     
     async def get_stage(self) -> GameStageKind | None:
         """Gets the current stage of the game.
@@ -116,8 +116,6 @@ class Client:
             self._logger.error(f'Failed to handle message: {e}')
 
     async def _loop(self) -> None:
-        await self._network_client.connect()
-
         while True:
             try:
                 await asyncio.sleep(1)
