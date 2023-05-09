@@ -32,7 +32,7 @@ class HttpClient(INetworkClient):
 
     async def connect(self) -> None:
         self._task_list.append(
-            asyncio.create_task(self._receive_loop())
+            asyncio.create_task(self._loop())
         )
 
     async def disconnect(self) -> None:
@@ -62,7 +62,7 @@ class HttpClient(INetworkClient):
         except Exception as e:
             self._logger.error(f"Failed to send: {e}")
 
-    async def _receive_loop(self) -> None:
+    async def _loop(self) -> None:
         while True:
             await asyncio.sleep(0.1)
 

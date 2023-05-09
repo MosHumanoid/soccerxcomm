@@ -5,7 +5,7 @@ from .message import Message
 
 
 class INetworkClient(ABC):
-    """The interface of the network client to communicate with the server."""
+    """Abstract interface for a network client."""
 
     @abstractmethod
     async def connect(self) -> None:

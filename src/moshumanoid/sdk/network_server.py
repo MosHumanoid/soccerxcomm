@@ -5,7 +5,7 @@ from .message import Message
 
 
 class INetworkServer(ABC):
-    """The interface of the network server to communicate with clients."""
+    """Abstract interface for a network server."""
 
     @abstractmethod
     async def broadcast(self, msg: Message) -> None:
