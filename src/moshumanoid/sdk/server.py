@@ -40,12 +40,13 @@ class Server:
         self._is_callback_registered: bool = False
         self._network_server: INetworkServer = HttpServer(
             port, list(all_client_info.keys()))
-        
+
         # Game information
         self._stage: GameStageKind | None = None
         self._start_time: datetime.datetime | None = None
         self._end_time: datetime.datetime | None = None
         self._score: Dict[str, float] = {}  # team -> score
+        self._simulation_rate: float | None = None
 
         # Client information
         self._all_client_info: Dict[str, Server.ClientInfo] = all_client_info
@@ -140,13 +141,44 @@ class Server:
 
         self._score[team] = score
 
+        await self._network_server.broadcast(Message({
+            'type': 'push_score',
+            'bound_to': 'client',
+            'team': team,
+            'score': score
+        }))
+
+    async def get_simulation_rate(self) -> float | None:
+        """Gets the simulation rate of the game.
+
+        Returns:
+            The simulation rate of the game.
+        """
+
+        return self._simulation_rate
+
+    async def set_simulation_rate(self, simulation_rate: float) -> None:
+        """Sets the simulation rate of the game.
+
+        Args:
+            simulation_rate: The simulation rate of the game.
+        """
+
+        self._simulation_rate = simulation_rate
+
     async def _callback(self, client_token: str, message: Message) -> None:
         try:
+            message_bound_to: str = message.get_bound_to()
+
+            if message_bound_to == 'client':
+                return
+
             message_type = message.get_type()
 
             if message_type == 'get_game_info':
                 if self._stage is None or self._start_time is None or \
-                        self._end_time is None or self._score is None:
+                        self._end_time is None or self._score is None or \
+                        self._simulation_rate is None:
                     raise Exception("The game information is not ready.")
 
                 if self._all_client_info.get(client_token, None) is None or \
@@ -162,7 +194,8 @@ class Server:
                     'score': [{
                         "team": team,
                         "score": score
-                    } for team, score in self._score.items()]
+                    } for team, score in self._score.items()],
+                    'simulation_rate': self._simulation_rate
                 }), client_token)
 
             elif message_type == 'get_team_info':

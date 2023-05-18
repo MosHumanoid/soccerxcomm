@@ -14,7 +14,7 @@ async def main():
     end_time = await client.get_end_time()
     score = await client.get_score("example_team")
 
-    print(f'stage: {stage}, start_time: {start_time}, end_time: {end_time}, score: {score}')
+    print(f'stage: {stage}, start_time: {start_time}, end_time: {end_time}, score: {score}, simulation_rate: {await client.get_simulation_rate()}')
 
     await client.disconnect()
 

@@ -34,6 +34,7 @@ class Client:
         self._start_time: datetime.datetime | None = None
         self._end_time: datetime.datetime | None = None
         self._score: Dict[str, float] = {}
+        self._simulation_rate: float | None = None
 
         # Team information
         self._team: str | None = None
@@ -98,8 +99,22 @@ class Client:
 
         return self._score.get(team, None)
 
+    async def get_simulation_rate(self) -> float | None:
+        """Gets the simulation rate.
+
+        Returns:
+            The simulation rate.
+        """
+
+        return self._simulation_rate
+
     async def _callback(self, msg: Message) -> None:
         try:
+            message_bound_to: str = msg.get_bound_to()
+
+            if message_bound_to == 'server':
+                return
+
             message_type: str = msg.get_type()
 
             if message_type == 'get_game_info':
@@ -111,9 +126,13 @@ class Client:
                 for score_item in msg['score']:
                     self._score[str(score_item['team'])] = float(
                         score_item['score'])
+                self._simulation_rate = float(msg['simulation_rate'])
 
             elif message_type == 'get_team_info':
                 self._team = str(msg['team'])
+
+            elif message_type == 'push_score':
+                self._score[str(msg['team'])] = float(msg['score'])
 
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')

@@ -56,6 +56,7 @@
         "stage",
         "start_time",
         "end_time",
-        "score"
+        "score",
+        "simulation_rate"
     ]
 }

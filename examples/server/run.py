@@ -15,6 +15,7 @@ async def main():
     await server.set_start_time(datetime.datetime.now())
     await server.set_end_time(datetime.datetime.now() + datetime.timedelta(minutes=1))
     await server.set_score("example_team", 114.514)
+    await server.set_simulation_rate(1.1)
 
     await asyncio.sleep(60)
 
