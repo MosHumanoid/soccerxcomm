@@ -1,0 +1,117 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "type": {
+            "type": "string",
+            "const": "get_robot_info"
+        },
+        "bound_to": {
+            "type": "string",
+            "const": "client"
+        },
+        "team":{
+            "type":"string"
+        },
+        "order":{
+            "type":"number"
+        },
+        "imu_data": {
+            "type":"object",
+            "properties": {
+                "acceleration":{
+                    "type":"object",
+                    "properties":{
+                        "ax":{
+                            "type":"number"
+                        },
+                        "ay":{
+                            "type":"number"
+                        },
+                        "az":{
+                            "type":"number"
+                        }
+                    },
+                    "required": [
+                        "ax",
+                        "ay",
+                        "az"
+                    ]
+                },
+                "angular_velocity":{
+                    "type":"object",
+                    "properties": {
+                        "vp":{
+                            "type":"number"
+                        },
+                        "vy":{
+                            "type":"number"
+                        },
+                        "vr":{
+                            "type":"number"
+                        }
+                    },
+                    "required": [
+                        "vp",
+                        "vy",
+                        "vr"
+                    ]
+                },
+                "attitude_angle":{
+                    "type":"object",
+                    "properties": {
+                        "pitch_angle":{
+                            "type":"number"
+                        },
+                        "yaw_angle":{
+                            "type":"number"
+                        },
+                        "roll_angle":{
+                            "type":"number"
+                        }
+                    },
+                    "required": [
+                        "pitch_angle",
+                        "yaw_angle",
+                        "roll_angle"
+                    ]
+                }
+            },
+            "required": [
+                "acceleration",
+                "angular_velocity",
+                "attitude_angle"
+            ]
+        },
+        "head_data": {
+            "type":"object",
+            "properties": {
+                "head_angle":{
+                    "type":"number"
+                },
+                "neck_angle":{
+                    "type":"number"
+                }
+            },
+            "required": [
+                "head_angle",
+                "neck_angle"
+            ]   
+        },
+        "camera_data":{
+            "type":"array",
+            "items":{
+                "type":"number"
+            }
+        }
+    },
+    "required":[
+        "type",
+        "bound_to",
+        "team",
+        "order",
+        "imu_data",
+        "head_data",
+        "camera_data"
+    ]
+}
