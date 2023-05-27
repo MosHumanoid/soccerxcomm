@@ -48,7 +48,7 @@ class HttpClient(INetworkClient):
         try:
             async with self._session.post(
                 self._url,
-                json=msg.to_dict(),
+                data=msg.to_bytes(),
                 headers={"Authorization": f"Bearer {self._token}"}
             ) as response:
                 if response.status == 204:
@@ -75,7 +75,7 @@ class HttpClient(INetworkClient):
                         continue
 
                     elif response.status == 200:
-                        msg = Message(await response.json())
+                        msg = Message(await response.read())
                         for callback in self._callback_list:
                             await callback(msg)
 

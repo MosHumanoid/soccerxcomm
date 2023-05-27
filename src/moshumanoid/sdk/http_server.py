@@ -77,9 +77,9 @@ class HttpServer(INetworkServer):
             if self._message_queue_dict[token].empty():
                 return web.Response(status=204)
 
-            msg = await self._message_queue_dict[token].get()
+            msg: Message = await self._message_queue_dict[token].get()
             self._logger.debug(f"Sending message: {msg}")
-            return web.json_response(msg.to_dict())
+            return web.Response(body=msg.to_bytes())
 
         except Exception as e:
             self._logger.error(
@@ -100,7 +100,7 @@ class HttpServer(INetworkServer):
             if token not in self._message_queue_dict:
                 return web.Response(status=403)
 
-            msg = Message(await request.json())
+            msg = Message(await request.read())
             self._logger.debug(f"Received message: {msg}")
             for callback in self._callback_list:
                 await callback(token, msg)

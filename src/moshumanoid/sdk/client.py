@@ -118,21 +118,21 @@ class Client:
             message_type: str = msg.get_type()
 
             if message_type == 'get_game_info':
-                self._stage = GameStageKind(str(msg['stage']))
+                self._stage = GameStageKind(str(msg.to_dict()['stage']))
                 self._start_time = datetime.datetime.fromtimestamp(
-                    int(msg['start_time']))
+                    int(msg.to_dict()['start_time']))
                 self._end_time = datetime.datetime.fromtimestamp(
-                    int(msg['end_time']))
-                for score_item in msg['score']:
+                    int(msg.to_dict()['end_time']))
+                for score_item in msg.to_dict()['score']:
                     self._score[str(score_item['team'])] = float(
                         score_item['score'])
-                self._simulation_rate = float(msg['simulation_rate'])
+                self._simulation_rate = float(msg.to_dict()['simulation_rate'])
 
             elif message_type == 'get_team_info':
-                self._team = str(msg['team'])
+                self._team = str(msg.to_dict()['team'])
 
             elif message_type == 'push_score':
-                self._score[str(msg['team'])] = float(msg['score'])
+                self._score[str(msg.to_dict()['team'])] = float(msg.to_dict()['score'])
 
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')

@@ -1,13 +1,15 @@
-import json
+from __future__ import annotations
+
 from typing import Any, Dict
 
+import bson
 import jsonschema
 
 
 class Message:
     """The message to communicate with servers."""
 
-    _JSON_SCHEMA = {
+    _SCHEMA = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "properties": {
@@ -28,40 +30,25 @@ class Message:
         ]
     }
 
-    def __init__(self, json_obj: Dict[str, Any]):
+    def __init__(self, payload: Dict[str, Any] | bytes):
         """Initializes the message.
 
         Args:
-            json_obj: The JSON object.
+            payload: The payload of the message.
         """
 
-        validator = jsonschema.Draft7Validator(Message._JSON_SCHEMA)
-        if not validator.is_valid(json_obj):
+        self._payload: Dict[str, Any] = {}
+
+        if isinstance(payload, bytes):
+            self._payload = bson.decode(payload)
+        elif isinstance(payload, dict):
+            self._payload = payload
+        else:
+            raise TypeError("The payload must be a dictionary or bytes.")
+
+        validator = jsonschema.Draft7Validator(Message._SCHEMA)
+        if not validator.is_valid(self._payload):
             raise ValueError("The JSON is not valid.")
-
-        self._json = json_obj
-
-    def __getitem__(self, key: str) -> Any:
-        """Gets the value of the specified key.
-
-        Args:
-            key: The key to get the value of.
-
-        Returns:
-            The value of the specified key.
-        """
-
-        return self._json[key]
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        """Sets the value of the specified key.
-
-        Args:
-            key: The key to set the value of.
-            value: The value to set.
-        """
-
-        self._json[key] = value
 
     def __str__(self) -> str:
         """Converts the message to a string.
@@ -70,7 +57,16 @@ class Message:
             The string of the message.
         """
 
-        return json.dumps(self._json)
+        return str(self._payload)
+
+    def to_bytes(self) -> bytes:
+        """Converts the message to BSON bytes.
+
+        Returns:
+            The BSON bytes of the message.
+        """
+
+        return bson.encode(self._payload)
 
     def to_dict(self) -> Dict[str, Any]:
         """Converts the message to a dictionary.
@@ -79,7 +75,7 @@ class Message:
             The dictionary of the message.
         """
 
-        return self._json
+        return self._payload
 
     def get_bound_to(self) -> str:
         """Gets the direction of the message.
@@ -89,7 +85,7 @@ class Message:
             "client" if the message is sent to the client.
         """
 
-        return self._json["bound_to"]
+        return self._payload["bound_to"]
 
     def get_type(self) -> str:
         """Gets the type of the message.
@@ -98,4 +94,4 @@ class Message:
             The type of the message.
         """
 
-        return self._json["type"]
+        return self._payload["type"]

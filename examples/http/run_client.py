@@ -28,7 +28,7 @@ async def main():
     await client.disconnect()
 
 async def callback(msg: sdk.Message) -> None:
-    id = msg['id']
+    id = msg.to_dict()['id']
 
     if id == ID:
         print('Matched!')

@@ -11,13 +11,13 @@ async def main():
     await server.stop()
 
 async def callback(token: str, msg: sdk.Message) -> None:
-    print(f'{msg["id"]} from {token}')
+    print(f'{msg.to_dict()["id"]} from {token}')
 
     await server.send(sdk.Message(
         {
             "type": "",
             "bound_to": "client",
-            "id": msg["id"],
+            "id": msg.to_dict()["id"],
         }
     ), token)
 
