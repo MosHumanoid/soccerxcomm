@@ -12,7 +12,7 @@ pip install moshumanoid.sdk
 
 ## Usage
 
-_TO BE ADDED_
+_TODO_
 
 ## Contributing
 
