@@ -131,9 +131,6 @@ class Client:
             elif message_type == 'get_team_info':
                 self._team = str(msg.to_dict()['team'])
 
-            elif message_type == 'push_score':
-                self._score[str(msg.to_dict()['team'])] = float(msg.to_dict()['score'])
-
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')
 

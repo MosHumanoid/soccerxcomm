@@ -141,13 +141,6 @@ class Server:
 
         self._score[team] = score
 
-        await self._network_server.broadcast(Message({
-            'type': 'push_score',
-            'bound_to': 'client',
-            'team': team,
-            'score': score
-        }))
-
     async def get_simulation_rate(self) -> float | None:
         """Gets the simulation rate of the game.
 
