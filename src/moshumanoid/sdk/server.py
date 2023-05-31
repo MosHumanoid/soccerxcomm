@@ -9,6 +9,8 @@ from .logger import Logger
 from .message import Message
 from .network_server import INetworkServer
 
+import numpy as np
+
 
 class Server:
     """The MosHumanoid server."""
@@ -29,17 +31,20 @@ class Server:
 
     _logger = Logger("Server")
 
-    def __init__(self, port: int, all_client_info: Dict[str, Server.ClientInfo]):
+    def __init__(self, controller_port: int, streaming_port: int, all_client_info: Dict[str, Server.ClientInfo]):
         """Initializes the server.
 
         Args:
-            port: The port of the server.
+            controller_port: The port of the controller server.
+            streaming_port: The port of the streaming server.
             all_client_info: The information of the clients.
         """
 
         self._is_callback_registered: bool = False
-        self._network_server: INetworkServer = HttpServer(
-            port, list(all_client_info.keys()))
+        self._controller_network_server: INetworkServer = HttpServer(
+            controller_port, list(all_client_info.keys()))
+        self._streaming_network_server: INetworkServer = HttpServer(
+            streaming_port, list(all_client_info.keys()))
 
         # Game information
         self._stage: GameStageKind | None = None
@@ -55,15 +60,17 @@ class Server:
         """Starts the game."""
 
         if not self._is_callback_registered:
-            await self._network_server.register_callback(self._callback)
+            await self._controller_network_server.register_callback(self._controller_callback)
             self._is_callback_registered = True
 
-        await self._network_server.start()
+        await self._controller_network_server.start()
+        await self._streaming_network_server.start()
 
     async def stop(self) -> None:
         """Stops the game."""
 
-        await self._network_server.stop()
+        await self._controller_network_server.stop()
+        await self._streaming_network_server.stop()
 
     async def get_stage(self) -> GameStageKind | None:
         """Gets the current stage of the game.
@@ -159,7 +166,22 @@ class Server:
 
         self._simulation_rate = simulation_rate
 
-    async def _callback(self, client_token: str, message: Message) -> None:
+    async def push_captured_image(self, token: str, image: np.ndarray) -> None:
+        """Pushes the captured image to the client.
+
+        Args:
+            token: The token of the client.
+            image: The captured image.
+        """
+
+        await self._streaming_network_server.send(Message({
+            'type': 'push_captured_image',
+            'bound_to': 'client',
+            'data': image.tobytes(),
+            'shape': list(image.shape),
+        }), token)
+
+    async def _controller_callback(self, client_token: str, message: Message) -> None:
         try:
             message_bound_to: str = message.get_bound_to()
 
@@ -178,7 +200,7 @@ class Server:
                         self._score.get(self._all_client_info[client_token].team, None) is None:
                     raise Exception("The client is not in the game.")
 
-                await self._network_server.send(Message({
+                await self._controller_network_server.send(Message({
                     'type': 'get_game_info',
                     'bound_to': 'client',
                     'stage': self._stage.value,
@@ -195,7 +217,7 @@ class Server:
                 if self._all_client_info.get(client_token, None) is None:
                     raise Exception("The client is not in the game.")
 
-                await self._network_server.send(Message({
+                await self._controller_network_server.send(Message({
                     'type': 'get_team_info',
                     'bound_to': 'client',
                     'team': self._all_client_info[client_token].team

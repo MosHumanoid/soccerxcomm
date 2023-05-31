@@ -10,29 +10,20 @@
             "type": "string",
             "const": "client"
         },
-        "shape": {
-            "type": "object",
-            "properties": {
-                "width": {
-                    "type": "integer"
-                },
-                "height": {
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "width",
-                "height"
-            ]
-        },
         "data": {
             "type": "string"
+        },
+        "shape": {
+            "type": "array",
+            "items": {
+                "type": "number"
+            }
         }
     },
     "required": [
         "type",
         "bound_to",
-        "shape",
-        "data"
+        "data",
+        "shape"
     ]
 }

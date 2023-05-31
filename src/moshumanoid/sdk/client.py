@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List
+
+import numpy as np
 
 from .game_stage_kind import GameStageKind
 from .http_client import HttpClient
 from .logger import Logger
 from .message import Message
 from .network_client import INetworkClient
-
-import numpy as np
 
 
 class Client:
@@ -68,6 +68,7 @@ class Client:
         self._task_list.clear()
 
         await self._controller_network_client.disconnect()
+        await self._streaming_network_client.disconnect()
 
     async def get_stage(self) -> GameStageKind | None:
         """Gets the current stage of the game.
@@ -116,6 +117,15 @@ class Client:
         """
 
         return self._simulation_rate
+    
+    async def get_capture_image(self) -> np.ndarray | None:
+        """Gets the captured image.
+
+        Returns:
+            The captured image.
+        """
+
+        return self._captured_image
 
     async def _controller_callback(self, msg: Message) -> None:
         try:
@@ -175,9 +185,10 @@ class Client:
             message_type: str = msg.get_type()
 
             if message_type == 'push_captured_image':
-                shape: Tuple[int, int] = (msg.to_dict()['shape']['height'], msg.to_dict()['shape']['width'])
                 data: bytes = msg.to_dict()['data']
-                self._captured_image = np.frombuffer(data, dtype=np.uint8).reshape(shape)
+                shape: List[int] = msg.to_dict()['shape']
+                self._captured_image = np.frombuffer(
+                    data, dtype=np.uint8).reshape(shape)
 
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')

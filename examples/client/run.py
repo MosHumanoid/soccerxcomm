@@ -2,8 +2,10 @@ import asyncio
 
 import moshumanoid.sdk as sdk
 
+from datetime import datetime
+
 async def main():
-    client = sdk.Client("localhost", 14514, "example_client")
+    client = sdk.Client("localhost", 14514, 14515, "example_client")
 
     await client.connect()
 
@@ -16,7 +18,13 @@ async def main():
 
     print(f'stage: {stage}, start_time: {start_time}, end_time: {end_time}, score: {score}, simulation_rate: {await client.get_simulation_rate()}')
 
+    captured_image = await client.get_capture_image()
+
+    print(f'captured_image: {captured_image}')
+
     await client.disconnect()
 
 if __name__ == '__main__':
     asyncio.run(main())
+    print("done")
+

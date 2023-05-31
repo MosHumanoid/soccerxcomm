@@ -13,6 +13,8 @@ from .network_server import INetworkServer
 class HttpServer(INetworkServer):
     """The HTTP server to communicate with the client."""
 
+    _MESSAGE_QUEUE_MAX_SIZE = 100
+
     _logger = Logger("HttpServer")
 
     def __init__(self, port: int, token_list: List[str]):
@@ -26,8 +28,8 @@ class HttpServer(INetworkServer):
 
         self._callback_list: List[Callable[[
             str, Message], Coroutine[Any, Any, None]]] = []
-        self._message_queue_dict: Dict[str, asyncio.Queue] = {
-            token: asyncio.Queue() for token in token_list
+        self._message_queue_dict: Dict[str, asyncio.Queue[Message]] = {
+            token: asyncio.Queue(HttpServer._MESSAGE_QUEUE_MAX_SIZE) for token in token_list
         }
 
         # Initialize the HTTP server.
@@ -40,7 +42,7 @@ class HttpServer(INetworkServer):
 
     async def broadcast(self, msg: Message) -> None:
         for token in self._message_queue_dict.keys():
-            await self._message_queue_dict[token].put(msg)
+            await self.send(msg, token)
 
     async def register_callback(self, callback: Callable[[str, Message], Coroutine[Any, Any, None]]) -> None:
         self._callback_list.append(callback)
@@ -48,7 +50,13 @@ class HttpServer(INetworkServer):
     async def send(self, msg: Message, token: str) -> None:
         if token not in self._message_queue_dict:
             raise Exception("The token is not registered.")
-
+        
+        message_queue: asyncio.Queue[Message] = self._message_queue_dict[token]
+        
+        if message_queue.full():
+            # Remove the oldest message.
+            message_queue.get_nowait()
+        
         await self._message_queue_dict[token].put(msg)
 
     async def start(self) -> None:
