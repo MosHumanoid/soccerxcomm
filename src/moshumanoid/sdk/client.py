@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from .game_stage_kind import GameStageKind
 from .http_client import HttpClient
@@ -10,23 +10,29 @@ from .logger import Logger
 from .message import Message
 from .network_client import INetworkClient
 
+import numpy as np
+
 
 class Client:
     """The client to send commands to the server."""
 
     _logger = Logger("Client")
 
-    def __init__(self, host: str, port: int, token: str):
+    def __init__(self, host: str, port_controller: int, port_streaming: int, token: str):
         """Initializes the client.
 
         Args:
             host: The server address.
-            port: The server port.
+            port_controller: The port of the controller server.
+            port_streaming: The port of the streaming server.
             token: The token of the game.
         """
 
         self._is_callback_registered: bool = False
-        self._network_client: INetworkClient = HttpClient(host, port, token)
+        self._controller_network_client: INetworkClient = HttpClient(
+            host, port_controller, token)
+        self._streaming_network_client: INetworkClient = HttpClient(
+            host, port_streaming, token)
         self._task_list: List[asyncio.Task] = []
 
         # Game information
@@ -36,19 +42,22 @@ class Client:
         self._score: Dict[str, float] = {}
         self._simulation_rate: float | None = None
 
-        # Team information
+        # Robot information
         self._team: str | None = None
+        self._captured_image: np.ndarray | None = None
 
     async def connect(self) -> None:
         """Connects to the server."""
 
         if not self._is_callback_registered:
-            await self._network_client.register_callback(self._callback)
+            await self._controller_network_client.register_callback(self._controller_callback)
+            await self._streaming_network_client.register_callback(self._streaming_callback)
             self._is_callback_registered = True
 
-        await self._network_client.connect()
+        await self._controller_network_client.connect()
+        await self._streaming_network_client.connect()
 
-        self._task_list.append(asyncio.create_task(self._loop()))
+        self._task_list.append(asyncio.create_task(self._controller_loop()))
 
     async def disconnect(self) -> None:
         """Disconnects from the server."""
@@ -58,7 +67,7 @@ class Client:
 
         self._task_list.clear()
 
-        await self._network_client.disconnect()
+        await self._controller_network_client.disconnect()
 
     async def get_stage(self) -> GameStageKind | None:
         """Gets the current stage of the game.
@@ -108,7 +117,7 @@ class Client:
 
         return self._simulation_rate
 
-    async def _callback(self, msg: Message) -> None:
+    async def _controller_callback(self, msg: Message) -> None:
         try:
             message_bound_to: str = msg.get_bound_to()
 
@@ -134,19 +143,19 @@ class Client:
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')
 
-    async def _loop(self) -> None:
+    async def _controller_loop(self) -> None:
         while True:
             try:
                 await asyncio.sleep(1)
 
-                await self._network_client.send(Message(
+                await self._controller_network_client.send(Message(
                     {
                         "type": "get_game_info",
                         "bound_to": "server"
                     }
                 ))
 
-                await self._network_client.send(Message(
+                await self._controller_network_client.send(Message(
                     {
                         "type": "get_team_info",
                         "bound_to": "server"
@@ -155,3 +164,20 @@ class Client:
 
             except Exception as e:
                 self._logger.error(f'Failed to get info: {e}')
+
+    async def _streaming_callback(self, msg: Message) -> None:
+        try:
+            message_bound_to: str = msg.get_bound_to()
+
+            if message_bound_to == 'server':
+                return
+
+            message_type: str = msg.get_type()
+
+            if message_type == 'push_captured_image':
+                shape: Tuple[int, int] = (msg.to_dict()['shape']['height'], msg.to_dict()['shape']['width'])
+                data: bytes = msg.to_dict()['data']
+                self._captured_image = np.frombuffer(data, dtype=np.uint8).reshape(shape)
+
+        except Exception as e:
+            self._logger.error(f'Failed to handle message: {e}')

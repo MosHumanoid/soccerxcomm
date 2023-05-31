@@ -14,6 +14,7 @@ jsonschema = "^4.17.3"
 termcolor = "^2.3.0"
 aiohttp = "^3.8.4"
 pymongo = "^4.3.3"
+numpy = "^1.24.3"
 
 
 [build-system]
