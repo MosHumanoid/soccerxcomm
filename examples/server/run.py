@@ -3,7 +3,7 @@ import datetime
 
 import numpy as np
 
-import moshumanoid.sdk as sdk
+import soccerxcomm as sdk
 
 server = sdk.Server(14514, 14515, {
     "example_client": sdk.Server.ClientInfo(

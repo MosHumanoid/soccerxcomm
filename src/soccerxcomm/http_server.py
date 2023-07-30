@@ -4,7 +4,7 @@ from typing import Any, Callable, Coroutine, Dict, List
 
 from aiohttp import web
 
-from moshumanoid.sdk.message import Message
+from soccerxcomm.message import Message
 
 from .logger import Logger
 from .network_server import INetworkServer

@@ -1,6 +1,6 @@
 import asyncio
 
-import moshumanoid.sdk as sdk
+import soccerxcomm as sdk
 
 server = sdk.HttpServer(14514, ["example_client"])
 

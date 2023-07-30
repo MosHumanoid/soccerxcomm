@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "moshumanoid.sdk"
+name = "soccerxcomm"
 version = "0.0.1"
-description = "A Python library for communication with MosHumanoid clients and servers"
+description = "A Python library for communication between SoccerX platform and the agents"
 authors = ["Zijian Zhang <futrime@outlook.com>"]
 readme = "README.md"
 packages = [
-    {include = "moshumanoid", from="src" }
+    {include = "soccerxcomm", from="src" }
 ]
 
 [tool.poetry.dependencies]

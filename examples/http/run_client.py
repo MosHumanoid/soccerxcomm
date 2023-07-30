@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 
-import moshumanoid.sdk as sdk
+import soccerxcomm as sdk
 
 ID = 1145141919810
 
