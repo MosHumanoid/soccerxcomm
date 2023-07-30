@@ -12,7 +12,7 @@ pip install soccerxcomm
 
 ## Usage
 
-_TODO_
+See the [documentation](https://moshumanoid.github.io/SoccerXComm/) for more information.
 
 ## Contributing
 
