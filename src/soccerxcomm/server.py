@@ -31,20 +31,20 @@ class Server:
 
     _logger = Logger("Server")
 
-    def __init__(self, controller_port: int, streaming_port: int, all_client_info: Dict[str, Server.ClientInfo]):
+    def __init__(self, port_controller: int, port_streaming: int, all_client_info: Dict[str, Server.ClientInfo]):
         """Initializes the server.
 
         Args:
-            controller_port: The port of the controller server.
-            streaming_port: The port of the streaming server.
+            port_controller: The port of the controller server.
+            port_streaming: The port of the streaming server.
             all_client_info: The information of the clients.
         """
 
         self._is_callback_registered: bool = False
         self._controller_network_server: INetworkServer = HttpServer(
-            controller_port, list(all_client_info.keys()))
+            port_controller, list(all_client_info.keys()))
         self._streaming_network_server: INetworkServer = HttpServer(
-            streaming_port, list(all_client_info.keys()))
+            port_streaming, list(all_client_info.keys()))
 
         # Game information
         self._stage: GameStageKind | None = None
