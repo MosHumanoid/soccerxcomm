@@ -19,7 +19,7 @@ jobs:
         run: poetry install --with docs
 
       - name: Build documentation
-        run: mkdocs build
+        run: poetry run mkdocs build
 
       - uses: actions/upload-pages-artifact@v1
         with:
