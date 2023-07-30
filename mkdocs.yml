@@ -1,0 +1,25 @@
+site_name: SoccerXComm
+
+nav:
+  - index.md
+  - client.md
+  - server.md
+  - network_client.md
+  - network_server.md
+  - http_client.md
+  - http_server.md
+  - game_stage_kind.md
+  - message.md
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src/soccerxcomm
+          options:
+            inherited_members: true
+            show_source: false
+            show_root_toc_entry: false
+
+theme: readthedocs

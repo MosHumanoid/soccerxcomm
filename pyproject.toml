@@ -3,10 +3,9 @@ name = "soccerxcomm"
 version = "0.0.1"
 description = "A Python library for communication between SoccerX platform and the agents"
 authors = ["Zijian Zhang <futrime@outlook.com>"]
+license = "MIT"
 readme = "README.md"
-packages = [
-    {include = "soccerxcomm", from="src" }
-]
+packages = [{ include = "soccerxcomm", from = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -15,6 +14,10 @@ termcolor = "^2.3.0"
 aiohttp = "^3.8.4"
 pymongo = "^4.3.3"
 numpy = "^1.24.3"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.4.2"
+mkdocstrings = { extras = ["python"], version = "^0.21.2" }
 
 
 [build-system]

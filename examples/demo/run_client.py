@@ -2,8 +2,6 @@ import asyncio
 
 import soccerxcomm as sdk
 
-from datetime import datetime
-
 async def main():
     client = sdk.Client("localhost", 14514, 14515, "example_client")
 

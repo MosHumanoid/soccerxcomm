@@ -41,13 +41,32 @@ class HttpServer(INetworkServer):
         self._runner = web.AppRunner(self._app)
 
     async def broadcast(self, msg: Message) -> None:
+        """Broadcasts a message to all clients.
+
+        Args:
+            msg: The message to broadcast.
+        """
+
         for token in self._message_queue_dict.keys():
             await self.send(msg, token)
 
     async def register_callback(self, callback: Callable[[str, Message], Coroutine[Any, Any, None]]) -> None:
+        """Registers a callback function to be called when a message is received.
+
+        Args:
+            callback: The callback function to register. The arguments are the token of the client and the message.
+        """
+
         self._callback_list.append(callback)
 
     async def send(self, msg: Message, token: str) -> None:
+        """Sends a message to a client.
+
+        Args:
+            msg: The message to send.
+            token: The token of the client to send the message to.
+        """
+
         if token not in self._message_queue_dict:
             raise Exception("The token is not registered.")
         
@@ -60,11 +79,15 @@ class HttpServer(INetworkServer):
         await self._message_queue_dict[token].put(msg)
 
     async def start(self) -> None:
+        """Starts the server."""
+
         await self._runner.setup()
         site = web.TCPSite(self._runner, port=self._port)
         await site.start()
 
     async def stop(self) -> None:
+        """Stops the server."""
+        
         await self._runner.cleanup()
 
     async def _on_get(self, request: web.Request) -> web.Response:
