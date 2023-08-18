@@ -118,7 +118,7 @@ class Client:
 
         return self._simulation_rate
     
-    async def get_capture_image(self) -> np.ndarray | None:
+    async def get_captured_image(self) -> np.ndarray | None:
         """Gets the captured image.
 
         Returns:

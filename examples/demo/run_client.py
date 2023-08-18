@@ -16,7 +16,7 @@ async def main():
 
     print(f'stage: {stage}, start_time: {start_time}, end_time: {end_time}, score: {score}, simulation_rate: {await client.get_simulation_rate()}')
 
-    captured_image = await client.get_capture_image()
+    captured_image = await client.get_captured_image()
 
     print(f'captured_image: {captured_image}')
 
