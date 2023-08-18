@@ -3,35 +3,22 @@ from __future__ import annotations
 import datetime
 from typing import Dict
 
+import numpy as np
+
+from .client_info import ClientInfo
 from .game_stage_kind import GameStageKind
 from .http_server import HttpServer
 from .logger import Logger
 from .message import Message
 from .network_server import INetworkServer
 
-import numpy as np
-
 
 class Server:
     """The MosHumanoid server."""
 
-    class ClientInfo:
-        """The information of the client."""
-
-        def __init__(self, team: str, token: str):
-            """Initializes the information of the client.
-
-            Args:
-                team: The name of the team.
-                token: The token of the client.
-            """
-
-            self.team: str = team
-            self.token: str = token
-
     _logger = Logger("Server")
 
-    def __init__(self, port_controller: int, port_streaming: int, all_client_info: Dict[str, Server.ClientInfo]):
+    def __init__(self, port_controller: int, port_streaming: int, all_client_info: Dict[str, ClientInfo]):
         """Initializes the server.
 
         Args:
@@ -54,7 +41,7 @@ class Server:
         self._simulation_rate: float | None = None
 
         # Client information
-        self._all_client_info: Dict[str, Server.ClientInfo] = all_client_info
+        self._all_client_info: Dict[str, ClientInfo] = all_client_info
 
     async def start(self) -> None:
         """Starts the game."""

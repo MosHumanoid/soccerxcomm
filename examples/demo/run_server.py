@@ -6,7 +6,7 @@ import numpy as np
 import soccerxcomm as sdk
 
 server = sdk.Server(14514, 14515, {
-    "example_client": sdk.Server.ClientInfo(
+    "example_client": sdk.ClientInfo(
         team="example_team", token="example_client")
 })
 

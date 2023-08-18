@@ -8,6 +8,7 @@ nav:
   - network_server.md
   - http_client.md
   - http_server.md
+  - client_info.md
   - game_stage_kind.md
   - message.md
 
