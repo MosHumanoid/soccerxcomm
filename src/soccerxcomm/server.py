@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-import datetime
 from typing import Dict
 
-from .game_stage_kind import GameStageKind
+import numpy as np
+
+from .game_info import GameInfo
 from .http_server import HttpServer
 from .logger import Logger
 from .message import Message
-from .network_server import INetworkServer
-
-import numpy as np
+from .network_server_interface import INetworkServer
+from .robot_status import RobotStatus
+from .robot_control import RobotControl
 
 
 class Server:
@@ -31,30 +32,27 @@ class Server:
 
     _logger = Logger("Server")
 
-    def __init__(self, port_controller: int, port_streaming: int, all_client_info: Dict[str, Server.ClientInfo]):
+    def __init__(self, port_controller: int, port_streaming: int, client_team_map: Dict[str, str]):
         """Initializes the server.
 
         Args:
             port_controller: The port of the controller server.
             port_streaming: The port of the streaming server.
-            all_client_info: The information of the clients.
+            client_team_map: The map of the client and the team.
         """
 
         self._is_callback_registered: bool = False
         self._controller_network_server: INetworkServer = HttpServer(
-            port_controller, list(all_client_info.keys()))
+            port_controller, list(client_team_map.keys()))
         self._streaming_network_server: INetworkServer = HttpServer(
-            port_streaming, list(all_client_info.keys()))
+            port_streaming, list(client_team_map.keys()))
+        
+        self._client_team_map: Dict[str, str] = client_team_map
 
-        # Game information
-        self._stage: GameStageKind | None = None
-        self._start_time: datetime.datetime | None = None
-        self._end_time: datetime.datetime | None = None
-        self._score: Dict[str, float] = {}  # team -> score
-        self._simulation_rate: float | None = None
-
-        # Client information
-        self._all_client_info: Dict[str, Server.ClientInfo] = all_client_info
+        self._game_info: GameInfo | None = None
+        self._robot_control_map: Dict[str, RobotControl] = {
+            token: RobotControl() for token in client_team_map.keys()
+        } # token -> RobotControl
 
     async def start(self) -> None:
         """Starts the game."""
@@ -72,99 +70,41 @@ class Server:
         await self._controller_network_server.stop()
         await self._streaming_network_server.stop()
 
-    async def get_stage(self) -> GameStageKind | None:
-        """Gets the current stage of the game.
+    async def get_game_info(self) -> GameInfo:
+        """Gets the information of the game.
 
         Returns:
-            The current stage of the game.
+            The information of the game.
         """
 
-        return self._stage
+        if self._game_info is None:
+            raise Exception("The game information is not ready.")
 
-    async def set_stage(self, stage: GameStageKind) -> None:
-        """Sets the current stage of the game.
+        return self._game_info
+    
+    async def set_game_info(self, game_info: GameInfo):
+        """Sets the information of the game.
 
         Args:
-            stage: The current stage of the game.
+            game_info: The information of the game.
         """
 
-        self._stage = stage
+        self._game_info = game_info
 
-    async def get_start_time(self) -> datetime.datetime | None:
-        """Gets the start time of the game.
+    async def get_robot_control(self, token: str) -> RobotControl:
+        """Gets the robot control commands.
+
+        Args:
+            token: The token of the client.
 
         Returns:
-            The start time of the game.
+            The robot control commands.
         """
 
-        return self._start_time
+        if self._robot_control_map.get(token, None) is None:
+            raise Exception("The client is not in the game.")
 
-    async def set_start_time(self, start_time: datetime.datetime) -> None:
-        """Sets the start time of the game.
-
-        Args:
-            start_time: The start time of the game.
-        """
-
-        self._start_time = start_time
-
-    async def get_end_time(self) -> datetime.datetime | None:
-        """Gets the end time of the game.
-
-        Returns:
-            The end time of the game.
-        """
-
-        return self._end_time
-
-    async def set_end_time(self, end_time: datetime.datetime) -> None:
-        """Sets the end time of the game.
-
-        Args:
-            end_time: The end time of the game.
-        """
-
-        self._end_time = end_time
-
-    async def get_score(self, team: str) -> float | None:
-        """Gets the score of the team.
-
-        Args:
-            team: The name of the team.
-
-        Returns:
-            The score of the team.
-        """
-
-        return self._score.get(team, None)
-
-    async def set_score(self, team: str, score: float) -> None:
-        """Sets the score of the team.
-
-        Args:
-            team: The name of the team.
-            score: The score of the team.
-        """
-
-        self._score[team] = score
-
-    async def get_simulation_rate(self) -> float | None:
-        """Gets the simulation rate of the game.
-
-        Returns:
-            The simulation rate of the game.
-        """
-
-        return self._simulation_rate
-
-    async def set_simulation_rate(self, simulation_rate: float) -> None:
-        """Sets the simulation rate of the game.
-
-        Args:
-            simulation_rate: The simulation rate of the game.
-        """
-
-        self._simulation_rate = simulation_rate
+        return self._robot_control_map[token]
 
     async def push_captured_image(self, token: str, image: np.ndarray) -> None:
         """Pushes the captured image to the client.
@@ -181,47 +121,103 @@ class Server:
             'shape': list(image.shape),
         }), token)
 
+    async def push_robot_status(self, token: str, robot_status: RobotStatus) -> None:
+        """Pushes the status of the robot to the client.
+
+        Args:
+            token: The token of the client.
+            robot_status: The status of the robot.
+        """
+
+        await self._controller_network_server.send(Message({
+            'type': 'push_robot_status',
+            'bound_to': 'client',
+            'head': {
+                'head_angle': robot_status.head_angle,
+                'neck_angle': robot_status.neck_angle
+            },
+            'imu': {
+                'acceleration': {
+                    'x': robot_status.acceleration[0],
+                    'y': robot_status.acceleration[1],
+                    'z': robot_status.acceleration[2]
+                },
+                'angular_velocity': {
+                    'pitch': robot_status.angular_velocity[0],
+                    'yaw': robot_status.angular_velocity[1],
+                    'roll': robot_status.angular_velocity[2]
+                },
+                'attitude_angle': {
+                    'pitch': robot_status.attitude_angle[0],
+                    'yaw': robot_status.attitude_angle[1],
+                    'roll': robot_status.attitude_angle[2]
+                }
+            },
+            'team': robot_status.team
+        }), token)
+
     async def _controller_callback(self, client_token: str, message: Message) -> None:
         try:
             message_bound_to: str = message.get_bound_to()
 
+            # Filter out the messages bound to the client
             if message_bound_to == 'client':
                 return
 
             message_type = message.get_type()
 
             if message_type == 'get_game_info':
-                if self._stage is None or self._start_time is None or \
-                        self._end_time is None or self._score is None or \
-                        self._simulation_rate is None:
+                if self._game_info is None:
                     raise Exception("The game information is not ready.")
 
-                if self._all_client_info.get(client_token, None) is None or \
-                        self._score.get(self._all_client_info[client_token].team, None) is None:
+                if self._client_team_map.get(client_token, None) is None or \
+                        self._game_info.score.get(self._client_team_map[client_token], None) is None:
                     raise Exception("The client is not in the game.")
 
                 await self._controller_network_server.send(Message({
                     'type': 'get_game_info',
                     'bound_to': 'client',
-                    'stage': self._stage.value,
-                    'start_time': self._start_time.timestamp(),
-                    'end_time': self._end_time.timestamp(),
-                    'score': [{
-                        "team": team,
-                        "score": score
-                    } for team, score in self._score.items()],
-                    'simulation_rate': self._simulation_rate
+                    'stage': self._game_info.stage.value,
+                    'start_time': self._game_info.start_time.timestamp(),
+                    'end_time': self._game_info.end_time.timestamp(),
+                    'score': self._game_info.score,
+                    'simulation_rate': self._game_info.simulation_rate
                 }), client_token)
 
-            elif message_type == 'get_team_info':
-                if self._all_client_info.get(client_token, None) is None:
-                    raise Exception("The client is not in the game.")
+            elif message_type == 'push_robot_control':
+                obj = message.to_dict()
 
-                await self._controller_network_server.send(Message({
-                    'type': 'get_team_info',
-                    'bound_to': 'client',
-                    'team': self._all_client_info[client_token].team
-                }), client_token)
+                head = None
+                movement = None
+                kick = None
+
+                if obj.get('head', None) is not None:
+                    head = RobotControl.Head(
+                        head_angle=obj['head'].get('head_angle', None),
+                        neck_angle=obj['head'].get('neck_angle', None)
+                    )
+
+                if obj.get('movement', None) is not None:
+                    movement = RobotControl.Movement(
+                        x=obj['movement'].get('x', None),
+                        y=obj['movement'].get('y', None),
+                        omega_z=obj['movement'].get('omega_z', None)
+                    )
+
+                if obj.get('kick', None) is not None:
+                    kick = RobotControl.Kick(
+                        x=obj['kick']['x'],
+                        y=obj['kick']['y'],
+                        z=obj['kick']['z'],
+                        speed=obj['kick']['speed'],
+                        delay=obj['kick']['delay']
+                    )
+
+                self._robot_control_map[client_token] = RobotControl(
+                    head=head,
+                    movement=movement,
+                    kick=kick
+                )
 
         except Exception as e:
             self._logger.error(f"Failed to handle message: {e}")

@@ -5,11 +5,13 @@ import aiohttp
 
 from .logger import Logger
 from .message import Message
-from .network_client import INetworkClient
+from .network_client_interface import INetworkClient
 
 
 class HttpClient(INetworkClient):
     """The HTTP client to communicate with the server."""
+
+    _FETCH_INTERVAL = 0.05
 
     _logger = Logger("HttpClient")
 
@@ -81,7 +83,7 @@ class HttpClient(INetworkClient):
 
     async def _loop(self) -> None:
         while True:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(HttpClient._FETCH_INTERVAL)
 
             try:
                 async with self._session.get(

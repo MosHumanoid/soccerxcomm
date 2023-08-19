@@ -29,21 +29,11 @@
             "description": "Unix timestamp in milliseconds"
         },
         "score": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "team": {
-                        "type": "string"
-                    },
-                    "score": {
-                        "type": "number"
-                    }
-                },
-                "required": [
-                    "team",
-                    "score"
-                ]
+            "type": "object",
+            "patternProperties": {
+                "^.*$": {
+                    "type": "integer"
+                }
             }
         },
         "simulation_rate": {

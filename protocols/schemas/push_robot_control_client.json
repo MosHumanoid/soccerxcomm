@@ -1,0 +1,78 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "type": {
+            "type": "string",
+            "const": "push_robot_control"
+        },
+        "bound_to": {
+            "type": "string",
+            "const": "server"
+        },
+        "head": {
+            "type": "object",
+            "properties": {
+                "head_angle": {
+                    "type": "number"
+                },
+                "neck_angle": {
+                    "type": "number"
+                }
+            }
+        },
+        "movement": {
+            "type": "object",
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "omega_z": {
+                    "type": "number"
+                }
+            }
+        },
+        "kick": {
+            "type": "object",
+            "properties": {
+                "position": {
+                    "type": "object",
+                    "properties": {
+                        "x": {
+                            "type": "number"
+                        },
+                        "y": {
+                            "type": "number"
+                        },
+                        "z": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "x",
+                        "y",
+                        "z"
+                    ]
+                },
+                "speed": {
+                    "type": "number"
+                },
+                "delay": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "position",
+                "speed",
+                "delay"
+            ]
+        }
+    },
+    "required": [
+        "type",
+        "bound_to"
+    ]
+}
