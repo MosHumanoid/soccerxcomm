@@ -26,9 +26,9 @@ async def main():
     server = sxc.Server(
         port_controller=14514,
         port_streaming=14515, 
-        all_client_info={
-            "example_client": sxc.Server.ClientInfo(
-                team="example_team", token="example_client")})
+        client_team_map={
+            'example_client': 'example_team',
+            'another_client': 'another_team'})
 
     await server.start()
 
