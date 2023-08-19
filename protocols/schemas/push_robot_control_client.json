@@ -19,11 +19,7 @@
                 "neck_angle": {
                     "type": "number"
                 }
-            },
-            "required": [
-                "head_angle",
-                "neck_angle"
-            ]
+            }
         },
         "movement": {
             "type": "object",
@@ -37,12 +33,7 @@
                 "omega_z": {
                     "type": "number"
                 }
-            },
-            "required": [
-                "x",
-                "y",
-                "omega_z"
-            ]
+            }
         },
         "kick": {
             "type": "object",

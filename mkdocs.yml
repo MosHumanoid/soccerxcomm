@@ -4,13 +4,15 @@ nav:
   - index.md
   - client.md
   - server.md
-  - network_client.md
-  - network_server.md
+  - network_client_interface.md
+  - network_server_interface.md
   - http_client.md
   - http_server.md
-  - client_info.md
+  - game_info.md
   - game_stage_kind.md
   - message.md
+  - robot_control.md
+  - robot_status.md
 
 plugins:
   - mkdocstrings:

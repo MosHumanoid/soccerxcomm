@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-from typing import List
+from typing import Any, Dict, List
 
 import numpy as np
 
@@ -11,7 +11,8 @@ from .game_stage_kind import GameStageKind
 from .http_client import HttpClient
 from .logger import Logger
 from .message import Message
-from .network_client import INetworkClient
+from .network_client_interface import INetworkClient
+from .robot_control import RobotControl
 from .robot_status import RobotStatus
 
 
@@ -93,6 +94,44 @@ class Client:
 
         return self._robot_status
 
+    async def push_robot_control(self, robot_control: RobotControl) -> None:
+        """Pushes the control of the robot to the server.
+
+        Args:
+            robot_control: The control of the robot.
+        """
+
+        obj: Dict[str, Any] = {
+            'type': 'push_robot_control',
+            'bound_to': 'server',
+        }
+
+        if robot_control.head is not None:
+            obj['head'] = {}
+            if robot_control.head.head_angle is not None:
+                obj['head']['head_angle'] = robot_control.head.head_angle
+            if robot_control.head.neck_angle is not None:
+                obj['head']['neck_angle'] = robot_control.head.neck_angle
+
+        if robot_control.movement is not None:
+            obj['movement'] = {}
+            if robot_control.movement.x is not None:
+                obj['movement']['x'] = robot_control.movement.x
+            if robot_control.movement.y is not None:
+                obj['movement']['y'] = robot_control.movement.y
+            if robot_control.movement.omega_z is not None:
+                obj['movement']['omega_z'] = robot_control.movement.omega_z
+
+        if robot_control.kick is not None:
+            obj['kick'] = {}
+            obj['kick']['x'] = robot_control.kick.x
+            obj['kick']['y'] = robot_control.kick.y
+            obj['kick']['z'] = robot_control.kick.z
+            obj['kick']['speed'] = robot_control.kick.speed
+            obj['kick']['delay'] = robot_control.kick.delay
+
+        await self._controller_network_client.send(Message(obj))
+
     async def _controller_callback(self, msg: Message) -> None:
         try:
             message_bound_to: str = msg.get_bound_to()
@@ -123,9 +162,11 @@ class Client:
                         float(msg.to_dict()['imu']['acceleration']['z']),
                     ]),
                     angular_velocity=np.array([
-                        float(msg.to_dict()['imu']['angular_velocity']['pitch']),
+                        float(msg.to_dict()['imu']
+                              ['angular_velocity']['pitch']),
                         float(msg.to_dict()['imu']['angular_velocity']['yaw']),
-                        float(msg.to_dict()['imu']['angular_velocity']['roll']),
+                        float(msg.to_dict()['imu']
+                              ['angular_velocity']['roll']),
                     ]),
                     attitude_angle=np.array([
                         float(msg.to_dict()['imu']['attitude_angle']['pitch']),

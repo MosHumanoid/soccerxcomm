@@ -7,7 +7,7 @@ from aiohttp import web
 from soccerxcomm.message import Message
 
 from .logger import Logger
-from .network_server import INetworkServer
+from .network_server_interface import INetworkServer
 
 
 class HttpServer(INetworkServer):

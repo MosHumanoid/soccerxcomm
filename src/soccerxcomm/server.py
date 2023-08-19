@@ -1,47 +1,58 @@
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict
 
 import numpy as np
 
-from .client_info import ClientInfo
 from .game_info import GameInfo
 from .http_server import HttpServer
 from .logger import Logger
 from .message import Message
-from .network_server import INetworkServer
+from .network_server_interface import INetworkServer
 from .robot_status import RobotStatus
+from .robot_control import RobotControl
 
 
 class Server:
     """The MosHumanoid server."""
 
+    class ClientInfo:
+        """The information of the client."""
+
+        def __init__(self, team: str, token: str):
+            """Initializes the information of the client.
+
+            Args:
+                team: The name of the team.
+                token: The token of the client.
+            """
+
+            self.team: str = team
+            self.token: str = token
+
     _logger = Logger("Server")
 
-    def __init__(self, port_controller: int, port_streaming: int, all_client_info_list: List[ClientInfo]):
+    def __init__(self, port_controller: int, port_streaming: int, client_team_map: Dict[str, str]):
         """Initializes the server.
 
         Args:
             port_controller: The port of the controller server.
             port_streaming: The port of the streaming server.
-            all_client_info_list: The information of the clients.
+            client_team_map: The map of the client and the team.
         """
-
-        all_client_token_list = [client_info.token for client_info in all_client_info_list]
 
         self._is_callback_registered: bool = False
         self._controller_network_server: INetworkServer = HttpServer(
-            port_controller, all_client_token_list)
+            port_controller, list(client_team_map.keys()))
         self._streaming_network_server: INetworkServer = HttpServer(
-            port_streaming, all_client_token_list)
+            port_streaming, list(client_team_map.keys()))
+        
+        self._client_team_map: Dict[str, str] = client_team_map
 
-        # Game information
         self._game_info: GameInfo | None = None
-
-        # Client information
-        self._all_client_info: Dict[str, ClientInfo] = {
-            client_info.token: client_info for client_info in all_client_info_list
-        }
+        self._robot_control_map: Dict[str, RobotControl] = {
+            token: RobotControl() for token in client_team_map.keys()
+        } # token -> RobotControl
 
     async def start(self) -> None:
         """Starts the game."""
@@ -79,6 +90,21 @@ class Server:
         """
 
         self._game_info = game_info
+
+    async def get_robot_control(self, token: str) -> RobotControl:
+        """Gets the robot control commands.
+
+        Args:
+            token: The token of the client.
+
+        Returns:
+            The robot control commands.
+        """
+
+        if self._robot_control_map.get(token, None) is None:
+            raise Exception("The client is not in the game.")
+
+        return self._robot_control_map[token]
 
     async def push_captured_image(self, token: str, image: np.ndarray) -> None:
         """Pushes the captured image to the client.
@@ -144,8 +170,8 @@ class Server:
                 if self._game_info is None:
                     raise Exception("The game information is not ready.")
 
-                if self._all_client_info.get(client_token, None) is None or \
-                        self._game_info.score.get(self._all_client_info[client_token].team, None) is None:
+                if self._client_team_map.get(client_token, None) is None or \
+                        self._game_info.score.get(self._client_team_map[client_token], None) is None:
                     raise Exception("The client is not in the game.")
 
                 await self._controller_network_server.send(Message({
@@ -159,8 +185,39 @@ class Server:
                 }), client_token)
 
             elif message_type == 'push_robot_control':
-                # TODO: Implement this
-                pass
+                obj = message.to_dict()
+
+                head = None
+                movement = None
+                kick = None
+
+                if obj.get('head', None) is not None:
+                    head = RobotControl.Head(
+                        head_angle=obj['head'].get('head_angle', None),
+                        neck_angle=obj['head'].get('neck_angle', None)
+                    )
+
+                if obj.get('movement', None) is not None:
+                    movement = RobotControl.Movement(
+                        x=obj['movement'].get('x', None),
+                        y=obj['movement'].get('y', None),
+                        omega_z=obj['movement'].get('omega_z', None)
+                    )
+
+                if obj.get('kick', None) is not None:
+                    kick = RobotControl.Kick(
+                        x=obj['kick']['x'],
+                        y=obj['kick']['y'],
+                        z=obj['kick']['z'],
+                        speed=obj['kick']['speed'],
+                        delay=obj['kick']['delay']
+                    )
+
+                self._robot_control_map[client_token] = RobotControl(
+                    head=head,
+                    movement=movement,
+                    kick=kick
+                )
 
         except Exception as e:
             self._logger.error(f"Failed to handle message: {e}")

@@ -2,13 +2,15 @@ import asyncio
 
 import soccerxcomm as sdk
 
+import random
+
 async def main():
-    client = sdk.Client("localhost", 14514, 14515, "another_client")
+    client = sdk.Client("localhost", 14514, 14515, "example_client")
 
     await client.connect()
 
     for _ in range(10):
-        await asyncio.sleep(5)
+        await asyncio.sleep(1)
 
         game_info = await client.get_game_info()
         if game_info is not None:
@@ -25,11 +27,29 @@ async def main():
             print("captured_image:")
             print(f'shape: {captured_image.shape} mean: {captured_image.mean()}')
 
+        await client.push_robot_control(sdk.RobotControl(
+            head=sdk.RobotControl.Head(
+                head_angle=random.uniform(-90.0, 90.0),
+                neck_angle=random.uniform(-90.0, 90.0)
+            ),
+            movement=sdk.RobotControl.Movement(
+                x=random.uniform(-1.0, 1.0),
+                y=random.uniform(-1.0, 1.0),
+                omega_z=random.uniform(-1.0, 1.0)
+            ),
+            kick=sdk.RobotControl.Kick(
+                x=random.uniform(-1.0, 1.0),
+                y=random.uniform(-1.0, 1.0),
+                z=random.uniform(-1.0, 1.0),
+                speed=random.uniform(0.0, 1.0),
+                delay=random.uniform(0.0, 1.0)
+            )
+        ))
+
         print()
 
     await client.disconnect()
 
 if __name__ == '__main__':
     asyncio.run(main())
-    print("done")
 

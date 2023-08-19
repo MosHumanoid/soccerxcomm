@@ -5,7 +5,7 @@ import aiohttp
 
 from .logger import Logger
 from .message import Message
-from .network_client import INetworkClient
+from .network_client_interface import INetworkClient
 
 
 class HttpClient(INetworkClient):
