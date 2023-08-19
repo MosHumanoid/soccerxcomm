@@ -8,7 +8,6 @@ from .message import Message
 from .network_client import INetworkClient
 from .network_server import INetworkServer
 from .server import Server
-from .team_score import TeamScore
 
 __all__ = [
     "Client",
@@ -20,6 +19,5 @@ __all__ = [
     "Message",
     "INetworkClient",
     "INetworkServer",
-    "Server",
-    "TeamScore",
+    "Server"
 ]

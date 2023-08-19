@@ -19,8 +19,6 @@ async def main():
     start_time = game_info.start_time
     end_time = game_info.end_time
     score = game_info.score.get('example_team', None)
-    if score is not None:
-        score = score.score
     simulation_rate = game_info.simulation_rate
 
     print(f'stage: {stage}, start_time: {start_time}, end_time: {end_time}, score: {score}, simulation_rate: {simulation_rate}')

@@ -17,10 +17,10 @@ async def main():
         stage=sdk.GameStageKind.READY,
         start_time=datetime.datetime.now(),
         end_time=datetime.datetime.now() + datetime.timedelta(seconds=60),
-        score_list=[
-            sdk.TeamScore(team="example_team", score=114),
-            sdk.TeamScore(team="another_team", score=0),
-        ],
+        score={
+            'example_team': 0,
+            'another_team': 0
+        },
         simulation_rate=1.0))
 
     await asyncio.sleep(5)

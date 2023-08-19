@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-from typing import Dict, List
+from typing import List
 
 import numpy as np
 
@@ -12,7 +12,6 @@ from .http_client import HttpClient
 from .logger import Logger
 from .message import Message
 from .network_client import INetworkClient
-from .team_score import TeamScore
 
 
 class Client:
@@ -101,10 +100,7 @@ class Client:
                         int(msg.to_dict()['start_time'])),
                     end_time=datetime.datetime.fromtimestamp(
                         int(msg.to_dict()['end_time'])),
-                    score_list=[TeamScore(
-                        team=str(score_item['team']),
-                        score=float(score_item['score']),
-                    ) for score_item in msg.to_dict()['score']],
+                    score=msg.to_dict()['score'],
                     simulation_rate=float(msg.to_dict()['simulation_rate']),
                 )
 

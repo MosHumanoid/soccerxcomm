@@ -5,12 +5,11 @@ from typing import Dict, List
 import numpy as np
 
 from .client_info import ClientInfo
+from .game_info import GameInfo
 from .http_server import HttpServer
 from .logger import Logger
 from .message import Message
 from .network_server import INetworkServer
-
-from .game_info import GameInfo
 
 
 class Server:
@@ -119,10 +118,7 @@ class Server:
                     'stage': self._game_info.stage.value,
                     'start_time': self._game_info.start_time.timestamp(),
                     'end_time': self._game_info.end_time.timestamp(),
-                    'score': [{
-                        'team': score.team,
-                        'score': score.score
-                    } for score in self._game_info.score.values()],
+                    'score': self._game_info.score,
                     'simulation_rate': self._game_info.simulation_rate
                 }), client_token)
 
