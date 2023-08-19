@@ -7,9 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2023-08-19
+
+### Added
+
+- Robot status and control.
+
+### Changed
+
+- Aggregated all game information into a single class.
+
 ## [0.0.1] - 2023-04-22
 
 - Initial release.
 
-[unreleased]: https://github.com/NovelCraft/SDK-Python/compare/v0.0.1...HEAD
-[0.0.1]: https://github.com/NovelCraft/SDK-Python/releases/tag/v0.0.1
+[unreleased]: https://github.com/MosHumanoid/SoccerXComm/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/MosHumanoid/SoccerXComm/releases/tag/v0.1.0
+[0.0.1]: https://github.com/MosHumanoid/SoccerXComm/releases/tag/v0.0.1
