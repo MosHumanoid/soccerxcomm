@@ -7,6 +7,7 @@ from .http_server import HttpServer
 from .message import Message
 from .network_client import INetworkClient
 from .network_server import INetworkServer
+from .robot_status import RobotStatus
 from .server import Server
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     "Message",
     "INetworkClient",
     "INetworkServer",
+    "RobotStatus",
     "Server"
 ]

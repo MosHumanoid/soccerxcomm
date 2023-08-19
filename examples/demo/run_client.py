@@ -3,29 +3,29 @@ import asyncio
 import soccerxcomm as sdk
 
 async def main():
-    client = sdk.Client("localhost", 14514, 14515, "example_client")
+    client = sdk.Client("localhost", 14514, 14515, "another_client")
 
     await client.connect()
 
-    await asyncio.sleep(5)
+    for _ in range(10):
+        await asyncio.sleep(5)
 
-    game_info = await client.get_game_info()
+        game_info = await client.get_game_info()
+        if game_info is not None:
+            print("game_info:")
+            print(vars(game_info))
 
-    if game_info is None:
-        print("game_info is None")
-        return
+        robot_status = await client.get_robot_status()
+        if robot_status is not None:
+            print("robot_status:")
+            print(vars(robot_status))
 
-    stage = game_info.stage
-    start_time = game_info.start_time
-    end_time = game_info.end_time
-    score = game_info.score.get('example_team', None)
-    simulation_rate = game_info.simulation_rate
+        captured_image = await client.get_captured_image()
+        if captured_image is not None:
+            print("captured_image:")
+            print(f'shape: {captured_image.shape} mean: {captured_image.mean()}')
 
-    print(f'stage: {stage}, start_time: {start_time}, end_time: {end_time}, score: {score}, simulation_rate: {simulation_rate}')
-
-    captured_image = await client.get_captured_image()
-
-    print(f'captured_image:\n {captured_image}')
+        print()
 
     await client.disconnect()
 

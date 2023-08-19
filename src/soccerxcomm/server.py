@@ -10,6 +10,7 @@ from .http_server import HttpServer
 from .logger import Logger
 from .message import Message
 from .network_server import INetworkServer
+from .robot_status import RobotStatus
 
 
 class Server:
@@ -92,6 +93,41 @@ class Server:
             'bound_to': 'client',
             'data': image.tobytes(),
             'shape': list(image.shape),
+        }), token)
+
+    async def push_robot_status(self, token: str, robot_status: RobotStatus) -> None:
+        """Pushes the status of the robot to the client.
+
+        Args:
+            token: The token of the client.
+            robot_status: The status of the robot.
+        """
+
+        await self._controller_network_server.send(Message({
+            'type': 'push_robot_status',
+            'bound_to': 'client',
+            'head': {
+                'head_angle': robot_status.head_angle,
+                'neck_angle': robot_status.neck_angle
+            },
+            'imu': {
+                'acceleration': {
+                    'x': robot_status.acceleration[0],
+                    'y': robot_status.acceleration[1],
+                    'z': robot_status.acceleration[2]
+                },
+                'angular_velocity': {
+                    'pitch': robot_status.angular_velocity[0],
+                    'yaw': robot_status.angular_velocity[1],
+                    'roll': robot_status.angular_velocity[2]
+                },
+                'attitude_angle': {
+                    'pitch': robot_status.attitude_angle[0],
+                    'yaw': robot_status.attitude_angle[1],
+                    'roll': robot_status.attitude_angle[2]
+                }
+            },
+            'team': robot_status.team
         }), token)
 
     async def _controller_callback(self, client_token: str, message: Message) -> None:

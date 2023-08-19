@@ -13,7 +13,7 @@ from .network_server import INetworkServer
 class HttpServer(INetworkServer):
     """The HTTP server to communicate with the client."""
 
-    _MESSAGE_QUEUE_MAX_SIZE = 100
+    _MESSAGE_QUEUE_MAX_SIZE = 10
 
     _logger = Logger("HttpServer")
 

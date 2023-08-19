@@ -11,6 +11,8 @@ from .network_client import INetworkClient
 class HttpClient(INetworkClient):
     """The HTTP client to communicate with the server."""
 
+    _FETCH_INTERVAL = 0.05
+
     _logger = Logger("HttpClient")
 
     def __init__(self, host: str, port: int, token: str):
@@ -81,7 +83,7 @@ class HttpClient(INetworkClient):
 
     async def _loop(self) -> None:
         while True:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(HttpClient._FETCH_INTERVAL)
 
             try:
                 async with self._session.get(
