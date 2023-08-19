@@ -18,7 +18,7 @@ async def main():
 
     captured_image = await client.get_captured_image()
 
-    print(f'captured_image: {captured_image}')
+    print(f'captured_image:\n {captured_image}')
 
     await client.disconnect()
 

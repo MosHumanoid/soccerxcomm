@@ -5,19 +5,23 @@ import numpy as np
 
 import soccerxcomm as sdk
 
-server = sdk.Server(14514, 14515, {
-    "example_client": sdk.ClientInfo(
+server = sdk.Server(14514, 14515, [
+    sdk.ClientInfo(
         team="example_team", token="example_client")
-})
+])
 
 async def main():
     await server.start()
 
-    await server.set_stage(sdk.GameStageKind.READY)
-    await server.set_start_time(datetime.datetime.now())
-    await server.set_end_time(datetime.datetime.now() + datetime.timedelta(minutes=1))
-    await server.set_score("example_team", 114.514)
-    await server.set_simulation_rate(1.1)
+    await server.set_game_info(game_info=sdk.GameInfo(
+        stage=sdk.GameStageKind.READY,
+        start_time=datetime.datetime.now(),
+        end_time=datetime.datetime.now() + datetime.timedelta(seconds=60),
+        score_list=[
+            sdk.TeamScore(team="example_team", score=114),
+            sdk.TeamScore(team="another_team", score=0),
+        ],
+        simulation_rate=1.0))
 
     await asyncio.sleep(5)
 
