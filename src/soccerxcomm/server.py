@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Any, Callable, Coroutine, Dict, List
 
 import numpy as np
 
@@ -41,18 +41,18 @@ class Server:
             client_team_map: The map of the client and the team.
         """
 
+        self._client_team_map: Dict[str, str] = client_team_map
         self._is_callback_registered: bool = False
+        self._robot_control_callback_list: List[Callable[[str, RobotControl], Coroutine[Any, Any, None]]] = []
+
+        # Components
         self._controller_network_server: INetworkServer = HttpServer(
             port_controller, list(client_team_map.keys()))
         self._streaming_network_server: INetworkServer = HttpServer(
             port_streaming, list(client_team_map.keys()))
         
-        self._client_team_map: Dict[str, str] = client_team_map
-
+        # Game data
         self._game_info: GameInfo | None = None
-        self._robot_control_map: Dict[str, RobotControl] = {
-            token: RobotControl() for token in client_team_map.keys()
-        } # token -> RobotControl
 
     async def start(self) -> None:
         """Starts the game."""
@@ -70,19 +70,16 @@ class Server:
         await self._controller_network_server.stop()
         await self._streaming_network_server.stop()
 
-    async def get_game_info(self) -> GameInfo:
+    async def get_game_info(self) -> GameInfo | None:
         """Gets the information of the game.
 
         Returns:
             The information of the game.
         """
 
-        if self._game_info is None:
-            raise Exception("The game information is not ready.")
-
         return self._game_info
     
-    async def set_game_info(self, game_info: GameInfo):
+    async def set_game_info(self, game_info: GameInfo | None):
         """Sets the information of the game.
 
         Args:
@@ -90,21 +87,6 @@ class Server:
         """
 
         self._game_info = game_info
-
-    async def get_robot_control(self, token: str) -> RobotControl:
-        """Gets the robot control commands.
-
-        Args:
-            token: The token of the client.
-
-        Returns:
-            The robot control commands.
-        """
-
-        if self._robot_control_map.get(token, None) is None:
-            raise Exception("The client is not in the game.")
-
-        return self._robot_control_map[token]
 
     async def push_captured_image(self, token: str, image: np.ndarray) -> None:
         """Pushes the captured image to the client.
@@ -155,6 +137,15 @@ class Server:
             },
             'team': robot_status.team
         }), token)
+
+    async def register_robot_control_callback(self, callback: Callable[[str, RobotControl], Coroutine[Any, Any, None]]) -> None:
+        """Registers a callback for the robot control.
+
+        Args:
+            callback: The callback.
+        """
+
+        self._robot_control_callback_list.append(callback)
 
     async def _controller_callback(self, client_token: str, message: Message) -> None:
         try:
@@ -213,11 +204,8 @@ class Server:
                         delay=obj['kick']['delay']
                     )
 
-                self._robot_control_map[client_token] = RobotControl(
-                    head=head,
-                    movement=movement,
-                    kick=kick
-                )
+                for callback in self._robot_control_callback_list:
+                    await callback(client_token, RobotControl(head, movement, kick))
 
         except Exception as e:
             self._logger.error(f"Failed to handle message: {e}")
