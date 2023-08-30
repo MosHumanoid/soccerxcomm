@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-from typing import Any, Dict, List
+from typing import Any, Callable, Coroutine, Dict, List
 
 import numpy as np
 
@@ -32,16 +32,20 @@ class Client:
         """
 
         self._is_callback_registered: bool = False
+        self._general_data_callback_list: List[Callable[[
+            str, bytes], Coroutine[Any, Any, None]]] = []
+
+        # Components
         self._controller_network_client: INetworkClient = HttpClient(
             host, port_controller, token)
         self._streaming_network_client: INetworkClient = HttpClient(
             host, port_streaming, token)
         self._task_list: List[asyncio.Task] = []
 
+        # Game data
+        self._captured_image: np.ndarray | None = None
         self._game_info: GameInfo | None = None
         self._robot_status: RobotStatus | None = None
-
-        self._captured_image: np.ndarray | None = None
 
     async def connect(self) -> None:
         """Connects to the server."""
@@ -94,6 +98,21 @@ class Client:
 
         return self._robot_status
 
+    async def push_general_data(self, title: str, data: bytes) -> None:
+        """Pushes the general data to the server.
+
+        Args:
+            title: The title of the data.
+            data: The data.
+        """
+
+        await self._controller_network_client.send(Message({
+            'type': 'push_general_data',
+            'bound_to': 'server',
+            'title': title,
+            'data': data
+        }))
+
     async def push_robot_control(self, robot_control: RobotControl) -> None:
         """Pushes the control of the robot to the server.
 
@@ -131,6 +150,15 @@ class Client:
             obj['kick']['delay'] = robot_control.kick.delay
 
         await self._controller_network_client.send(Message(obj))
+
+    async def register_general_data_callback(self, callback: Callable[[str, bytes], Coroutine[Any, Any, None]]) -> None:
+        """Registers a callback for the general data.
+
+        Args:
+            callback: The callback.
+        """
+
+        self._general_data_callback_list.append(callback)
 
     async def _controller_callback(self, msg: Message) -> None:
         try:
@@ -175,6 +203,12 @@ class Client:
                     ]),
                     team=msg.to_dict()['team']
                 )
+
+            elif message_type == 'push_general_data':
+                obj = msg.to_dict()
+
+                for callback in self._general_data_callback_list:
+                    await callback(obj['title'], obj['data'])
 
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')

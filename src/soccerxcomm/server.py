@@ -44,6 +44,7 @@ class Server:
         self._client_team_map: Dict[str, str] = client_team_map
         self._is_callback_registered: bool = False
         self._robot_control_callback_list: List[Callable[[str, RobotControl], Coroutine[Any, Any, None]]] = []
+        self._general_data_callback_list: List[Callable[[str, str, bytes], Coroutine[Any, Any, None]]] = []
 
         # Components
         self._controller_network_server: INetworkServer = HttpServer(
@@ -103,6 +104,22 @@ class Server:
             'shape': list(image.shape),
         }), token)
 
+    async def push_general_data(self, token: str, title: str, data: bytes) -> None:
+        """Pushes the general data to the client.
+
+        Args:
+            token: The token of the client.
+            title: The title of the data.
+            data: The data.
+        """
+
+        await self._controller_network_server.send(Message({
+            'type': 'push_general_data',
+            'bound_to': 'client',
+            'title': title,
+            'data': data
+        }), token)
+
     async def push_robot_status(self, token: str, robot_status: RobotStatus) -> None:
         """Pushes the status of the robot to the client.
 
@@ -137,6 +154,15 @@ class Server:
             },
             'team': robot_status.team
         }), token)
+
+    async def register_general_data_callback(self, callback: Callable[[str, str, bytes], Coroutine[Any, Any, None]]) -> None:
+        """Registers a callback for the general data.
+
+        Args:
+            callback: The callback.
+        """
+
+        self._general_data_callback_list.append(callback)
 
     async def register_robot_control_callback(self, callback: Callable[[str, RobotControl], Coroutine[Any, Any, None]]) -> None:
         """Registers a callback for the robot control.
@@ -206,6 +232,12 @@ class Server:
 
                 for callback in self._robot_control_callback_list:
                     await callback(client_token, RobotControl(head, movement, kick))
+
+            elif message_type == 'push_general_data':
+                obj = message.to_dict()
+
+                for callback in self._general_data_callback_list:
+                    await callback(client_token, obj['title'], obj['data'])
 
         except Exception as e:
             self._logger.error(f"Failed to handle message: {e}")
