@@ -4,14 +4,11 @@
     "properties": {
         "type": {
             "type": "string",
-            "const": "get_service"
+            "const": "call_service"
         },
         "bound_to": {
             "type": "string",
-            "const": "server"
-        },
-        "service": {
-            "type": "string"
+            "const": "client"
         },
         "payload": {
             "type": "string"
@@ -23,7 +20,6 @@
     "required": [
         "type",
         "bound_to",
-        "service",
         "payload",
         "uuid"
     ]

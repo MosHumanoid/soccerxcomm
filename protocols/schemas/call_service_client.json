@@ -4,11 +4,11 @@
     "properties": {
         "type": {
             "type": "string",
-            "const": "get_service"
+            "const": "call_service"
         },
         "bound_to": {
             "type": "string",
-            "const": "client"
+            "const": "server"
         },
         "service": {
             "type": "string"

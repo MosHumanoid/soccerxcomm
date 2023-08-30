@@ -4,8 +4,10 @@ import soccerxcomm as sdk
 
 import random
 
-async def topic_message_callback(title: str, data: bytes):
-    print(f'topic_message_callback: {title} {data}')
+
+async def topic_message_callback(data: bytes):
+    print('Topic message:', data)
+
 
 async def main():
     client = sdk.Client("localhost", 14514, 14515, "example_client")
@@ -19,18 +21,15 @@ async def main():
 
         game_info = await client.get_game_info()
         if game_info is not None:
-            print("game_info:")
-            print(vars(game_info))
+            print("Game information:", vars(game_info))
 
         robot_status = await client.get_robot_status()
         if robot_status is not None:
-            print("robot_status:")
-            print(vars(robot_status))
+            print("Robot status:", vars(robot_status))
 
         captured_image = await client.get_captured_image()
         if captured_image is not None:
-            print("captured_image:")
-            print(f'shape: {captured_image.shape} mean: {captured_image.mean()}')
+            print("Captured image:", captured_image.shape, captured_image.mean())
 
         await client.push_robot_control(sdk.RobotControl(
             head=sdk.RobotControl.Head(
@@ -51,7 +50,13 @@ async def main():
             )
         ))
 
-        await client.push_topic_message("topic/example", f"data/from_client:{random.randint(0, 1000000)}".encode())
+        await client.push_topic_message("topic/example", f"topic/client:{random.randint(0, 1000000)}".encode())
+
+        resp = await client.call_service('service/example', f'service/request:{random.randint(0, 1000000)}'.encode(), timeout=1.0)
+        if resp is not None:
+            print(f'Service response: {resp}')
+        else:
+            print(f'Service timeout')
 
         print()
 
@@ -59,4 +64,3 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
-

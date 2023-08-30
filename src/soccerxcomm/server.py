@@ -43,15 +43,19 @@ class Server:
 
         self._client_team_map: Dict[str, str] = client_team_map
         self._is_callback_registered: bool = False
-        self._robot_control_callback_list: List[Callable[[str, RobotControl], Coroutine[Any, Any, None]]] = []
-        self._topic_message_callback_list_dict: Dict[str, List[Callable[[str, bytes], Coroutine[Any, Any, None]]]] = {}
+        self._robot_control_callback_list: List[Callable[[
+            str, RobotControl], Coroutine[Any, Any, None]]] = []
+        self._service_callback_dict: Dict[str, Callable[[
+            str, bytes], Coroutine[Any, Any, bytes]]] = {}
+        self._topic_message_callback_dict: Dict[str, Callable[[
+            str, bytes], Coroutine[Any, Any, None]]] = {}
 
         # Components
         self._controller_network_server: INetworkServer = HttpServer(
             port_controller, list(client_team_map.keys()))
         self._streaming_network_server: INetworkServer = HttpServer(
             port_streaming, list(client_team_map.keys()))
-        
+
         # Game data
         self._game_info: GameInfo | None = None
 
@@ -79,7 +83,7 @@ class Server:
         """
 
         return self._game_info
-    
+
     async def set_game_info(self, game_info: GameInfo | None):
         """Sets the information of the game.
 
@@ -155,24 +159,31 @@ class Server:
             'team': robot_status.team
         }), token)
 
-    async def register_topic_message_callback(self, topic:str, callback: Callable[[str, bytes], Coroutine[Any, Any, None]]) -> None:
+    async def register_topic_message_callback(self, topic: str, callback: Callable[[str, bytes], Coroutine[Any, Any, None]]) -> None:
         """Registers a callback for topic messages.
 
         Args:
             topic: The topic of the message.
-            callback: The callback.
+            callback: The callback. First argument is the token of the client, second argument is the data.
         """
 
-        if topic not in self._topic_message_callback_list_dict:
-            self._topic_message_callback_list_dict[topic] = []
-        
-        self._topic_message_callback_list_dict[topic].append(callback)
+        self._topic_message_callback_dict[topic] = callback
+
+    async def register_service_callback(self, service: str, callback: Callable[[str, bytes], Coroutine[Any, Any, bytes]]) -> None:
+        """Registers a callback for the service.
+
+        Args:
+            service: The service.
+            callback: The callback. First argument is the token of the client, second argument is the payload.
+        """
+
+        self._service_callback_dict[service] = callback
 
     async def register_robot_control_callback(self, callback: Callable[[str, RobotControl], Coroutine[Any, Any, None]]) -> None:
         """Registers a callback for the robot control.
 
         Args:
-            callback: The callback.
+            callback: The callback. First argument is the token of the client, second argument is the robot control.
         """
 
         self._robot_control_callback_list.append(callback)
@@ -182,7 +193,7 @@ class Server:
             message_bound_to: str = message.get_bound_to()
 
             # Filter out the messages bound to the client
-            if message_bound_to == 'client':
+            if message_bound_to != 'server':
                 return
 
             message_type = message.get_type()
@@ -204,6 +215,23 @@ class Server:
                     'score': self._game_info.score,
                     'simulation_rate': self._game_info.simulation_rate
                 }), client_token)
+
+            elif message_type == 'call_service':
+                obj = message.to_dict()
+                service = obj['service']
+                payload = obj['payload']
+                uuid = obj['uuid']
+
+                if service in self._service_callback_dict:
+                    callback = self._service_callback_dict[service]
+                    result = await callback(client_token, payload)
+
+                    await self._controller_network_server.send(Message({
+                        'type': 'call_service',
+                        'bound_to': 'client',
+                        'payload': result,
+                        'uuid': uuid
+                    }), client_token)
 
             elif message_type == 'push_robot_control':
                 obj = message.to_dict()
@@ -242,9 +270,9 @@ class Server:
                 topic = obj['topic']
                 data = obj['data']
 
-                if topic in self._topic_message_callback_list_dict:
-                    for callback in self._topic_message_callback_list_dict[topic]:
-                        await callback(client_token, data)
+                if topic in self._topic_message_callback_dict:
+                    callback = self._topic_message_callback_dict[topic]
+                    await callback(client_token, data)
 
         except Exception as e:
             self._logger.error(f"Failed to handle message: {e}")

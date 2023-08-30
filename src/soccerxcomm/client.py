@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import uuid
 from typing import Any, Callable, Coroutine, Dict, List
 
 import numpy as np
@@ -32,8 +33,9 @@ class Client:
         """
 
         self._is_callback_registered: bool = False
-        self._topic_message_callback_list_dict: Dict[str, List[Callable[[
-            str, bytes], Coroutine[Any, Any, None]]]] = {}
+        self._service_cache: Dict[str, bytes] = {}
+        self._topic_message_callback_dict: Dict[str, Callable[[
+            bytes], Coroutine[Any, Any, None]]] = {}
 
         # Components
         self._controller_network_client: INetworkClient = HttpClient(
@@ -98,6 +100,43 @@ class Client:
 
         return self._robot_status
 
+    async def call_service(self, service: str, payload: bytes, timeout: float | None = None) -> bytes | None:
+        """Calls the service.
+
+        Args:
+            service: The name of the service.
+            payload: The payload of the service.
+            timeout: The timeout of the service.
+
+        Returns:
+            The response of the service. If the service is timed out, returns None.
+        """
+
+        call_uuid = str(uuid.uuid4())
+
+        await self._controller_network_client.send(Message({
+            'type': 'call_service',
+            'bound_to': 'server',
+            'service': service,
+            'payload': payload,
+            'uuid': call_uuid
+        }))
+
+        start_time = datetime.datetime.now()
+
+        while True:
+            await asyncio.sleep(0)
+
+            if timeout is not None and (datetime.datetime.now() - start_time).total_seconds() > timeout:
+                return None
+
+            if call_uuid not in self._service_cache:
+                continue
+
+            response = self._service_cache[call_uuid]
+            del self._service_cache[call_uuid]
+            return response
+
     async def push_topic_message(self, topic: str, data: bytes) -> None:
         """Pushes the topic message to the server.
 
@@ -151,7 +190,7 @@ class Client:
 
         await self._controller_network_client.send(Message(obj))
 
-    async def register_topic_message_callback(self, topic: str, callback: Callable[[str, bytes], Coroutine[Any, Any, None]]) -> None:
+    async def register_topic_message_callback(self, topic: str, callback: Callable[[bytes], Coroutine[Any, Any, None]]) -> None:
         """Registers a callback for topic messages.
 
         Args:
@@ -159,21 +198,22 @@ class Client:
             callback: The callback.
         """
 
-        if topic not in self._topic_message_callback_list_dict:
-            self._topic_message_callback_list_dict[topic] = []
-
-        self._topic_message_callback_list_dict[topic].append(callback)
+        self._topic_message_callback_dict[topic] = callback
 
     async def _controller_callback(self, msg: Message) -> None:
         try:
             message_bound_to: str = msg.get_bound_to()
 
-            if message_bound_to == 'server':
+            if message_bound_to != 'client':
                 return
 
             message_type: str = msg.get_type()
 
-            if message_type == 'get_game_info':
+            if message_type == 'call_service':
+                call_uuid: str = msg.to_dict()['uuid']
+                self._service_cache[call_uuid] = msg.to_dict()['payload']
+
+            elif message_type == 'get_game_info':
                 self._game_info = GameInfo(
                     stage=GameStageKind(str(msg.to_dict()['stage'])),
                     start_time=datetime.datetime.fromtimestamp(
@@ -213,9 +253,9 @@ class Client:
                 topic = obj['topic']
                 data = obj['data']
 
-                if topic in self._topic_message_callback_list_dict:
-                    for callback in self._topic_message_callback_list_dict[topic]:
-                        await callback(obj['topic'], obj['data'])
+                if topic in self._topic_message_callback_dict:
+                    callback = self._topic_message_callback_dict[topic]
+                    await callback(data)
 
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')

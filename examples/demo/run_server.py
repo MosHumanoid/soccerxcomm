@@ -11,16 +11,20 @@ server = sdk.Server(14514, 14515, {
     'another_client': 'another_team'
 })
 
-async def topic_message_callback(client_name: str, data: bytes):
-    print(f'topic_message_callback: {client_name} {data}')
+async def topic_message_callback(_: str, data: bytes):
+    print(f'Topic message: {data}')
 
-async def robot_control_callback(client_name: str, rb_ctrl: sdk.RobotControl):
-        if rb_ctrl.head is not None:
-            print(vars(rb_ctrl.head))
-        if rb_ctrl.movement is not None:
-            print(vars(rb_ctrl.movement))
-        if rb_ctrl.kick is not None:
-            print(vars(rb_ctrl.kick))
+async def service_callback(_: str, payload: bytes):
+    print(f'Service request: {payload}')
+    return f'service/response:{random.randint(0, 1000000)}'.encode()
+
+async def robot_control_callback(_: str, rb_ctrl: sdk.RobotControl):
+    print(
+        'Robot control:',
+        vars(rb_ctrl.head) if rb_ctrl.head is not None else None,
+        vars(rb_ctrl.movement) if rb_ctrl.movement is not None else None,
+        vars(rb_ctrl.kick) if rb_ctrl.kick is not None else None
+    )
 
 
 async def main():
@@ -37,9 +41,10 @@ async def main():
         simulation_rate=1.3))
     
     await server.register_topic_message_callback('topic/example', topic_message_callback)
+    await server.register_service_callback('service/example', service_callback)
     await server.register_robot_control_callback(robot_control_callback)
 
-    for i in range(600):
+    for i in range(6000):
         await asyncio.sleep(0.1)
 
         if i % 10 == 0:
@@ -49,8 +54,7 @@ async def main():
                 game_info.score['another_team'] += random.randint(0, 10)
                 game_info.simulation_rate = random.uniform(0.5, 2.0)
 
-            await server.push_topic_message('example_client', 'topic/example', f'data/from_server:{random.randint(0, 1000000)}'.encode())
-
+            await server.push_topic_message('example_client', 'topic/example', f'topic/server:{random.randint(0, 1000000)}'.encode())
 
         if i % 1 == 0:
             await server.push_robot_status('example_client', sdk.RobotStatus(
