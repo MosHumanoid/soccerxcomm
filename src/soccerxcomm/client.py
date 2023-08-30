@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-from typing import Any, Dict, List
+import uuid
+from typing import Any, Callable, Coroutine, Dict, List
 
 import numpy as np
 
@@ -32,16 +33,21 @@ class Client:
         """
 
         self._is_callback_registered: bool = False
+        self._service_cache: Dict[str, bytes] = {}
+        self._topic_message_callback_dict: Dict[str, Callable[[
+            bytes], Coroutine[Any, Any, None]]] = {}
+
+        # Components
         self._controller_network_client: INetworkClient = HttpClient(
             host, port_controller, token)
         self._streaming_network_client: INetworkClient = HttpClient(
             host, port_streaming, token)
         self._task_list: List[asyncio.Task] = []
 
+        # Game data
+        self._captured_image: np.ndarray | None = None
         self._game_info: GameInfo | None = None
         self._robot_status: RobotStatus | None = None
-
-        self._captured_image: np.ndarray | None = None
 
     async def connect(self) -> None:
         """Connects to the server."""
@@ -94,6 +100,58 @@ class Client:
 
         return self._robot_status
 
+    async def call_service(self, service: str, payload: bytes, timeout: float | None = None) -> bytes | None:
+        """Calls the service.
+
+        Args:
+            service: The name of the service.
+            payload: The payload of the service.
+            timeout: The timeout of the service.
+
+        Returns:
+            The response of the service. If the service is timed out, returns None.
+        """
+
+        call_uuid = str(uuid.uuid4())
+
+        await self._controller_network_client.send(Message({
+            'type': 'call_service',
+            'bound_to': 'server',
+            'service': service,
+            'payload': payload,
+            'uuid': call_uuid
+        }))
+
+        start_time = datetime.datetime.now()
+
+        while True:
+            await asyncio.sleep(0)
+
+            if timeout is not None and (datetime.datetime.now() - start_time).total_seconds() > timeout:
+                return None
+
+            if call_uuid not in self._service_cache:
+                continue
+
+            response = self._service_cache[call_uuid]
+            del self._service_cache[call_uuid]
+            return response
+
+    async def push_topic_message(self, topic: str, data: bytes) -> None:
+        """Pushes the topic message to the server.
+
+        Args:
+            topic: The topic of the message.
+            data: The data bytes of the message.
+        """
+
+        await self._controller_network_client.send(Message({
+            'type': 'push_topic_message',
+            'bound_to': 'server',
+            'topic': topic,
+            'data': data
+        }))
+
     async def push_robot_control(self, robot_control: RobotControl) -> None:
         """Pushes the control of the robot to the server.
 
@@ -132,16 +190,30 @@ class Client:
 
         await self._controller_network_client.send(Message(obj))
 
+    async def register_topic_message_callback(self, topic: str, callback: Callable[[bytes], Coroutine[Any, Any, None]]) -> None:
+        """Registers a callback for topic messages.
+
+        Args:
+            topic: The topic of the message.
+            callback: The callback.
+        """
+
+        self._topic_message_callback_dict[topic] = callback
+
     async def _controller_callback(self, msg: Message) -> None:
         try:
             message_bound_to: str = msg.get_bound_to()
 
-            if message_bound_to == 'server':
+            if message_bound_to != 'client':
                 return
 
             message_type: str = msg.get_type()
 
-            if message_type == 'get_game_info':
+            if message_type == 'call_service':
+                call_uuid: str = msg.to_dict()['uuid']
+                self._service_cache[call_uuid] = msg.to_dict()['payload']
+
+            elif message_type == 'get_game_info':
                 self._game_info = GameInfo(
                     stage=GameStageKind(str(msg.to_dict()['stage'])),
                     start_time=datetime.datetime.fromtimestamp(
@@ -175,6 +247,15 @@ class Client:
                     ]),
                     team=msg.to_dict()['team']
                 )
+
+            elif message_type == 'push_topic_message':
+                obj = msg.to_dict()
+                topic = obj['topic']
+                data = obj['data']
+
+                if topic in self._topic_message_callback_dict:
+                    callback = self._topic_message_callback_dict[topic]
+                    await callback(data)
 
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')

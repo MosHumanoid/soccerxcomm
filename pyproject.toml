@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "soccerxcomm"
-version = "0.2.0"
+version = "0.3.0"
 description = "A Python library for communication between SoccerX platform and the agents"
 authors = ["Zijian Zhang <futrime@outlook.com>"]
 license = "MIT"
