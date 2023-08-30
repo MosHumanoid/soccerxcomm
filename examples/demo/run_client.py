@@ -10,7 +10,7 @@ async def topic_message_callback(title: str, data: bytes):
 async def main():
     client = sdk.Client("localhost", 14514, 14515, "example_client")
 
-    await client.register_topic_message_callback(topic_message_callback)
+    await client.register_topic_message_callback('topic/example', topic_message_callback)
 
     await client.connect()
 
@@ -51,8 +51,7 @@ async def main():
             )
         ))
 
-        data_str = f"data/{random.randint(0, 1000000)}"
-        await client.push_topic_message("client/title", data_str.encode())
+        await client.push_topic_message("topic/example", f"data/from_client:{random.randint(0, 1000000)}".encode())
 
         print()
 

@@ -32,8 +32,8 @@ class Client:
         """
 
         self._is_callback_registered: bool = False
-        self._topic_message_callback_list: List[Callable[[
-            str, bytes], Coroutine[Any, Any, None]]] = []
+        self._topic_message_callback_list_dict: Dict[str, List[Callable[[
+            str, bytes], Coroutine[Any, Any, None]]]] = {}
 
         # Components
         self._controller_network_client: INetworkClient = HttpClient(
@@ -151,14 +151,18 @@ class Client:
 
         await self._controller_network_client.send(Message(obj))
 
-    async def register_topic_message_callback(self, callback: Callable[[str, bytes], Coroutine[Any, Any, None]]) -> None:
+    async def register_topic_message_callback(self, topic: str, callback: Callable[[str, bytes], Coroutine[Any, Any, None]]) -> None:
         """Registers a callback for topic messages.
 
         Args:
+            topic: The topic of the message.
             callback: The callback.
         """
 
-        self._topic_message_callback_list.append(callback)
+        if topic not in self._topic_message_callback_list_dict:
+            self._topic_message_callback_list_dict[topic] = []
+
+        self._topic_message_callback_list_dict[topic].append(callback)
 
     async def _controller_callback(self, msg: Message) -> None:
         try:
@@ -206,9 +210,12 @@ class Client:
 
             elif message_type == 'push_topic_message':
                 obj = msg.to_dict()
+                topic = obj['topic']
+                data = obj['data']
 
-                for callback in self._topic_message_callback_list:
-                    await callback(obj['topic'], obj['data'])
+                if topic in self._topic_message_callback_list_dict:
+                    for callback in self._topic_message_callback_list_dict[topic]:
+                        await callback(obj['topic'], obj['data'])
 
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')

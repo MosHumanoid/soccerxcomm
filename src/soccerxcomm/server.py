@@ -44,7 +44,7 @@ class Server:
         self._client_team_map: Dict[str, str] = client_team_map
         self._is_callback_registered: bool = False
         self._robot_control_callback_list: List[Callable[[str, RobotControl], Coroutine[Any, Any, None]]] = []
-        self._topic_message_callback_list: List[Callable[[str, str, bytes], Coroutine[Any, Any, None]]] = []
+        self._topic_message_callback_list_dict: Dict[str, List[Callable[[str, bytes], Coroutine[Any, Any, None]]]] = {}
 
         # Components
         self._controller_network_server: INetworkServer = HttpServer(
@@ -155,14 +155,18 @@ class Server:
             'team': robot_status.team
         }), token)
 
-    async def register_topic_message_callback(self, callback: Callable[[str, str, bytes], Coroutine[Any, Any, None]]) -> None:
+    async def register_topic_message_callback(self, topic:str, callback: Callable[[str, bytes], Coroutine[Any, Any, None]]) -> None:
         """Registers a callback for topic messages.
 
         Args:
+            topic: The topic of the message.
             callback: The callback.
         """
 
-        self._topic_message_callback_list.append(callback)
+        if topic not in self._topic_message_callback_list_dict:
+            self._topic_message_callback_list_dict[topic] = []
+        
+        self._topic_message_callback_list_dict[topic].append(callback)
 
     async def register_robot_control_callback(self, callback: Callable[[str, RobotControl], Coroutine[Any, Any, None]]) -> None:
         """Registers a callback for the robot control.
@@ -235,9 +239,12 @@ class Server:
 
             elif message_type == 'push_topic_message':
                 obj = message.to_dict()
+                topic = obj['topic']
+                data = obj['data']
 
-                for callback in self._topic_message_callback_list:
-                    await callback(client_token, obj['topic'], obj['data'])
+                if topic in self._topic_message_callback_list_dict:
+                    for callback in self._topic_message_callback_list_dict[topic]:
+                        await callback(client_token, data)
 
         except Exception as e:
             self._logger.error(f"Failed to handle message: {e}")
