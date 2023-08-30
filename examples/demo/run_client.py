@@ -4,13 +4,13 @@ import soccerxcomm as sdk
 
 import random
 
-async def general_data_callback(title: str, data: bytes):
-    print(f'general_data_callback: {title} {data}')
+async def topic_message_callback(title: str, data: bytes):
+    print(f'topic_message_callback: {title} {data}')
 
 async def main():
     client = sdk.Client("localhost", 14514, 14515, "example_client")
 
-    await client.register_general_data_callback(general_data_callback)
+    await client.register_topic_message_callback(topic_message_callback)
 
     await client.connect()
 
@@ -52,7 +52,7 @@ async def main():
         ))
 
         data_str = f"data/{random.randint(0, 1000000)}"
-        await client.push_general_data("client/title", data_str.encode())
+        await client.push_topic_message("client/title", data_str.encode())
 
         print()
 

@@ -32,7 +32,7 @@ class Client:
         """
 
         self._is_callback_registered: bool = False
-        self._general_data_callback_list: List[Callable[[
+        self._topic_message_callback_list: List[Callable[[
             str, bytes], Coroutine[Any, Any, None]]] = []
 
         # Components
@@ -98,18 +98,18 @@ class Client:
 
         return self._robot_status
 
-    async def push_general_data(self, title: str, data: bytes) -> None:
-        """Pushes the general data to the server.
+    async def push_topic_message(self, topic: str, data: bytes) -> None:
+        """Pushes the topic message to the server.
 
         Args:
-            title: The title of the data.
-            data: The data.
+            topic: The topic of the message.
+            data: The data bytes of the message.
         """
 
         await self._controller_network_client.send(Message({
-            'type': 'push_general_data',
+            'type': 'push_topic_message',
             'bound_to': 'server',
-            'title': title,
+            'topic': topic,
             'data': data
         }))
 
@@ -151,14 +151,14 @@ class Client:
 
         await self._controller_network_client.send(Message(obj))
 
-    async def register_general_data_callback(self, callback: Callable[[str, bytes], Coroutine[Any, Any, None]]) -> None:
-        """Registers a callback for the general data.
+    async def register_topic_message_callback(self, callback: Callable[[str, bytes], Coroutine[Any, Any, None]]) -> None:
+        """Registers a callback for topic messages.
 
         Args:
             callback: The callback.
         """
 
-        self._general_data_callback_list.append(callback)
+        self._topic_message_callback_list.append(callback)
 
     async def _controller_callback(self, msg: Message) -> None:
         try:
@@ -204,11 +204,11 @@ class Client:
                     team=msg.to_dict()['team']
                 )
 
-            elif message_type == 'push_general_data':
+            elif message_type == 'push_topic_message':
                 obj = msg.to_dict()
 
-                for callback in self._general_data_callback_list:
-                    await callback(obj['title'], obj['data'])
+                for callback in self._topic_message_callback_list:
+                    await callback(obj['topic'], obj['data'])
 
         except Exception as e:
             self._logger.error(f'Failed to handle message: {e}')

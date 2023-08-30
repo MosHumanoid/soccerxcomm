@@ -4,7 +4,7 @@
     "properties": {
         "type": {
             "type": "string",
-            "const": "push_general_data"
+            "const": "push_topic_message"
         },
         "bound_to": {
             "type": "string",
@@ -13,7 +13,7 @@
                 "server"
             ]
         },
-        "title": {
+        "topic": {
             "type": "string"
         },
         "data": {
@@ -22,6 +22,8 @@
     },
     "required": [
         "type",
-        "bound_to"
+        "bound_to",
+        "topic",
+        "data"
     ]
 }
